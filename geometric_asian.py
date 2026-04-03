@@ -1,10 +1,10 @@
-import math
+import numpy as np
 from dataclasses import dataclass
+import math
 
-
-def norm_cdf(x: float) -> float:
-    """Standard normal CDF using erf."""
-    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+def norm_cdf(x):
+    """Standard normal CDF using numpy."""
+    return 0.5 * (1.0 + math.erf(x / np.sqrt(2.0)))
 
 
 @dataclass
@@ -17,51 +17,16 @@ class GeometricAsianResult:
     mu_g: float
 
 
-def geometric_asian_price(
-    S0: float,
-    K: float,
-    r: float,
-    sigma: float,
-    T: float,
-    n: int,
-    option_type: str = "call",
-) -> GeometricAsianResult:
-    """
-    Price a discretely sampled geometric Asian option under GBM.
-
-    Assumptions
-    -----------
-    - Under risk-neutral measure:
-        dS_t = r S_t dt + sigma S_t dW_t
-    - Sampling times are equally spaced:
-        t_i = i * T / n,  i = 1, ..., n
-    - Payoff:
-        call: max(G - K, 0)
-        put : max(K - G, 0)
-      where G = (prod_{i=1}^n S_{t_i})^(1/n)
-
-    Parameters
-    ----------
-    S0 : float
-        Initial stock price
-    K : float
-        Strike
-    r : float
-        Risk-free rate
-    sigma : float
-        Volatility
-    T : float
-        Maturity
-    n : int
-        Number of equally spaced fixing dates
-    option_type : str
-        "call" or "put"
-
-    Returns
-    -------
-    GeometricAsianResult
-        Contains price and intermediate quantities.
-    """
+def geometric_asian_price_analytical(
+    S0,
+    K,
+    r,
+    sigma,
+    T,
+    n,
+    option_type="call",
+):
+    # ---- input check ----
     if S0 <= 0:
         raise ValueError("S0 must be positive.")
     if K <= 0:
@@ -75,77 +40,85 @@ def geometric_asian_price(
     if option_type not in {"call", "put"}:
         raise ValueError("option_type must be 'call' or 'put'.")
 
-    # Mean and variance of log geometric average under risk-neutral GBM
-    #
-    # Let G = exp( (1/n) sum_{i=1}^n log S_{t_i} )
-    # Then log G is normal with:
-    #
-    # mu_lnG = log(S0)
-    #          + (r - 0.5*sigma^2) * T * (n + 1) / (2n)
-    #
-    # var_lnG = sigma^2 * T * (n + 1)(2n + 1) / (6n^2)
-    #
-    mu_lnG = math.log(S0) + (r - 0.5 * sigma * sigma) * T * (n + 1) / (2.0 * n)
-    var_lnG = sigma * sigma * T * (n + 1) * (2.0 * n + 1.0) / (6.0 * n * n)
+    # ---- mean / variance of log G ----
+    mu_lnG = np.log(S0) + (r - 0.5 * sigma**2) * T * (n + 1) / (2.0 * n)
+    var_lnG = sigma**2 * T * (n + 1) * (2.0 * n + 1.0) / (6.0 * n**2)
 
-    sigma_g = math.sqrt(var_lnG / T) if T > 0 else 0.0
+    sigma_g = np.sqrt(var_lnG / T)
     mu_g = mu_lnG / T
 
-    # E[G] = exp(mu_lnG + 0.5 * var_lnG)
-    adjusted_spot = math.exp(mu_lnG + 0.5 * var_lnG)
+    adjusted_spot = np.exp(mu_lnG + 0.5 * var_lnG)
 
-    vol_term = math.sqrt(var_lnG)
+    vol_term = np.sqrt(var_lnG)
 
+    # ---- zero vol edge case ----
     if vol_term < 1e-14:
-        # Degenerate zero-vol case
-        forward_g = math.exp(mu_lnG)
-        discounted_call = math.exp(-r * T) * max(forward_g - K, 0.0)
-        discounted_put = math.exp(-r * T) * max(K - forward_g, 0.0)
-        price = discounted_call if option_type == "call" else discounted_put
+        forward_g = np.exp(mu_lnG)
+        price_call = np.exp(-r * T) * np.maximum(forward_g - K, 0.0)
+        price_put = np.exp(-r * T) * np.maximum(K - forward_g, 0.0)
+        price = price_call if option_type == "call" else price_put
+
         return GeometricAsianResult(
-            price=price,
-            d1=float("nan"),
-            d2=float("nan"),
-            adjusted_spot=adjusted_spot,
-            sigma_g=sigma_g,
-            mu_g=mu_g,
+            price=float(price),
+            d1=np.nan,
+            d2=np.nan,
+            adjusted_spot=float(adjusted_spot),
+            sigma_g=float(sigma_g),
+            mu_g=float(mu_g),
         )
 
-    d1 = (mu_lnG - math.log(K) + var_lnG) / vol_term
+    # ---- d1, d2 ----
+    d1 = (mu_lnG - np.log(K) + var_lnG) / vol_term
     d2 = d1 - vol_term
 
-    discounted_factor = math.exp(-r * T)
+    discount = np.exp(-r * T)
 
-    call_price = discounted_factor * (
-        math.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(d1) - K * norm_cdf(d2)
+    call_price = discount * (
+        np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(d1)
+        - K * norm_cdf(d2)
     )
-    put_price = discounted_factor * (
-        K * norm_cdf(-d2) - math.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(-d1)
+
+    put_price = discount * (
+        K * norm_cdf(-d2)
+        - np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(-d1)
     )
 
     price = call_price if option_type == "call" else put_price
 
     return GeometricAsianResult(
-        price=price,
-        d1=d1,
-        d2=d2,
-        adjusted_spot=adjusted_spot,
-        sigma_g=sigma_g,
-        mu_g=mu_g,
+        price=float(price),
+        d1=float(d1),
+        d2=float(d2),
+        adjusted_spot=float(adjusted_spot),
+        sigma_g=float(sigma_g),
+        mu_g=float(mu_g),
     )
+
+def geometric_asian_mc(S0, K, r, sigma, T, n, n_paths=100000, seed=42):
+    rng = np.random.default_rng(seed)
+    dt = T/n
+    Z = rng.normal(size=(n_paths,n))
+
+    log_return = (r-1/2*sigma**2)*dt+sigma*Z*np.sqrt(dt)
+    log_S = np.cumsum(log_return,axis=1)
+    S = S0*np.exp(log_S)
+
+    #Geometric Average
+    G = np.exp(np.mean(np.log(S),axis=1))
+    payoff = np.maximum(G-K,0)
+    price = np.exp(-r*T)*np.mean(payoff)
+    return price
 
 
 if __name__ == "__main__":
-    # Example usage
-    S0 = 100.0
-    K = 100.0
+    S0 = 100
+    K = 100
     r = 0.05
     sigma = 0.2
     T = 1.0
     n = 12
 
-    call_res = geometric_asian_price(S0, K, r, sigma, T, n, option_type="call")
-    put_res = geometric_asian_price(S0, K, r, sigma, T, n, option_type="put")
+    res = geometric_asian_price_analytical(S0, K, r, sigma, T, n)
+    mc_price = geometric_asian_mc(S0, K, r, sigma, T, n)
 
-    print("Geometric Asian Call Price:", round(call_res.price, 6))
-    print("Geometric Asian Put Price: ", round(put_res.price, 6))
+    print("Price:", res.price, mc_price)
