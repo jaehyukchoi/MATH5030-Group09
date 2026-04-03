@@ -13,7 +13,7 @@ We study the pricing of Asian options, focusing on the difference between:
 
 Implemented methods:
 
-1. Geometric Asian (closed-form)
+1. Geometric Asian (closed-form and monte carlo)
 2. Arithmetic Asian (Monte Carlo)
 3. Turnbull–Wakeman approximation
 4. Levy approximation
