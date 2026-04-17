@@ -30,11 +30,12 @@ def geometric_asian_price_analytical(
     if option_type not in {"call", "put"}:
         raise ValueError("option_type must be 'call' or 'put'.")
 
-    # Geometric average includes S0:
-    # G = (prod_{i=0}^n S_{t_i})^(1/(n+1)), where t_i = iT/n
+    # Geometric average over n fixing dates (excluding S0):
+    # G = (prod_{i=1}^n S_{t_i})^(1/n),  t_i = iT/n
 
-    mu_lnG = np.log(S0) + (r - 0.5 * sigma**2) * T / 2.0
-    var_lnG = sigma**2 * T * n * (2.0 * n + 1.0) / (6.0 * (n + 1.0) ** 2)
+    # mean and variance of ln G
+    mu_lnG = np.log(S0) + (r - 0.5 * sigma**2) * T * (n + 1.0) / (2.0 * n)
+    var_lnG = sigma**2 * T * (n + 1.0) * (2.0 * n + 1.0) / (6.0 * n**2)
 
     sigma_g = np.sqrt(var_lnG / T)
     mu_g = mu_lnG / T

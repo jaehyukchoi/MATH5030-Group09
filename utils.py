@@ -18,6 +18,14 @@ class GeometricAsianResult:
 
 
 def simulate_gbm_paths(S0, r, sigma, T, n, n_paths=100000, seed=42):
+    """
+    Simulate GBM paths and return prices at n fixing dates (excludes S0).
+
+    Returns
+    -------
+    S : ndarray, shape (n_paths, n)
+        Each row is [S_{t1}, S_{t2}, ..., S_{tn}] with t_i = iT/n.
+    """
     rng = np.random.default_rng(seed)
     dt = T / n
     Z = rng.normal(size=(n_paths, n))
@@ -26,8 +34,7 @@ def simulate_gbm_paths(S0, r, sigma, T, n, n_paths=100000, seed=42):
     log_S = np.cumsum(log_return, axis=1)
     S = S0 * np.exp(log_S)
 
-    S_path = np.concatenate([S0 * np.ones((n_paths, 1)), S], axis=1)
-    return S_path
+    return S
 
 
 def arithmetic_average_mc(S_path):
