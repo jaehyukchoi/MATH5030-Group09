@@ -40,12 +40,12 @@ def geometric_asian_price_analytical(
     if option_type not in {"call", "put"}:
         raise ValueError("option_type must be 'call' or 'put'.")
 
-    # Geometric average includes S0:
-    # G = (prod_{i=0}^n S_{t_i})^(1/(n+1)),  t_i = iT/n
+    # Geometric average over n fixing dates (excluding S0):
+    # G = (prod_{i=1}^n S_{t_i})^(1/n),  t_i = iT/n
 
     # mean and variance of ln G
-    mu_lnG = np.log(S0) + (r - 0.5 * sigma**2) * T / 2.0
-    var_lnG = sigma**2 * T * n * (2.0 * n + 1.0) / (6.0 * (n + 1.0) ** 2)
+    mu_lnG = np.log(S0) + (r - 0.5 * sigma**2) * T * (n + 1.0) / (2.0 * n)
+    var_lnG = sigma**2 * T * (n + 1.0) * (2.0 * n + 1.0) / (6.0 * n**2)
 
     sigma_g = np.sqrt(var_lnG / T)
     mu_g = mu_lnG / T
@@ -76,13 +76,11 @@ def geometric_asian_price_analytical(
     discount = np.exp(-r * T)
 
     call_price = discount * (
-        np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(d1)
-        - K * norm_cdf(d2)
+        np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(d1) - K * norm_cdf(d2)
     )
 
     put_price = discount * (
-        K * norm_cdf(-d2)
-        - np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(-d1)
+        K * norm_cdf(-d2) - np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(-d1)
     )
 
     price = call_price if option_type == "call" else put_price
@@ -119,11 +117,8 @@ def geometric_asian_mc(
     log_S = np.cumsum(log_return, axis=1)
     S = S0 * np.exp(log_S)
 
-    # include S0 so that convention matches arithmetic MC
-    S_path = np.concatenate([S0 * np.ones((n_paths, 1)), S], axis=1)
-
-    # Geometric average
-    G = np.exp(np.mean(np.log(S_path), axis=1))
+    # Geometric average over fixing dates only (excludes S0)
+    G = np.exp(np.mean(np.log(S), axis=1))
 
     if option_type == "call":
         payoff = np.maximum(G - K, 0.0)
