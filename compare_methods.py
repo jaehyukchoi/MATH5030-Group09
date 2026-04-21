@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import numpy as np
 from arithmetic_asian_MC import arithmetic_asian_price_mc
 from control_variate import arithmetic_asian_cv
 from approximation import (
@@ -30,7 +30,9 @@ def compare_one_case(
         "n": n,
         "option_type": option_type,
     }
+    rng = np.random.default_rng(seed)
 
+    Z = rng.normal(size=(n_paths, n))
     # ---------------- Plain MC ----------------
     t0 = time.perf_counter()
     mc_price, mc_se = arithmetic_asian_price_mc(
@@ -43,6 +45,7 @@ def compare_one_case(
         n_paths=n_paths,
         seed=seed,
         option_type=option_type,
+        Z=Z
     )
     t1 = time.perf_counter()
 
@@ -62,6 +65,7 @@ def compare_one_case(
         n_paths=n_paths,
         seed=seed,
         option_type=option_type,
+        Z=Z
     )
     t1 = time.perf_counter()
 

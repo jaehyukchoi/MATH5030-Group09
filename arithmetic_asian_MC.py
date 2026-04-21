@@ -6,10 +6,10 @@ from utils import (
     discounted,
 )
 
-def arithmetic_asian_price_mc(S0,K,r,T,sigma,n,n_paths=100000,seed=42,option_type="call"):
+def arithmetic_asian_price_mc(S0,K,r,T,sigma,n,n_paths=100000,seed=42,option_type="call",Z=None):
     if option_type not in {"call","put"}:
         raise ValueError("optional_type must be 'call' or 'put‘")
-    S_path = simulate_gbm_paths(S0=S0,r=r,sigma=sigma,n=n,n_paths=n_paths,seed=seed,T=T)
+    S_path = simulate_gbm_paths(S0=S0,r=r,sigma=sigma,n=n,n_paths=n_paths,seed=seed,T=T,Z=Z)
     average = arithmetic_average_mc(S_path)
     if option_type == "call":
         payoff=np.maximum(average-K,0)
@@ -18,7 +18,8 @@ def arithmetic_asian_price_mc(S0,K,r,T,sigma,n,n_paths=100000,seed=42,option_typ
 
     discounted_payoff = discounted(payoff,r,T)
     price = np.mean(discounted_payoff)
-    std_error = np.std(discounted_payoff,ddof=1)/np.sqrt(n_paths)
+    actual_n_paths = S_path.shape[0]
+    std_error = np.std(discounted_payoff, ddof=1) / np.sqrt(actual_n_paths)
 
     return price,std_error
 

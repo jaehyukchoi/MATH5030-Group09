@@ -63,6 +63,7 @@ def arithmetic_asian_cv(
     n_paths=100_000,
     seed=42,
     option_type="call",
+    Z=None
 ):
     """
     Price an arithmetic Asian option using Monte Carlo with a geometric
@@ -113,7 +114,11 @@ def arithmetic_asian_cv(
     # log_inc[i, j] = log(S_{t_{j+1}} / S_{t_j})  for path i
     # ------------------------------------------------------------------
     rng = np.random.default_rng(seed)
-    Z = rng.normal(size=(n_paths, n))
+    if Z is None:
+        Z = rng.normal(size=(n_paths, n))
+        ######## add an edge case here
+        ########
+
     log_inc = drift + vol_sqrt_dt * Z  # shape (n_paths, n)
 
     # ------------------------------------------------------------------
