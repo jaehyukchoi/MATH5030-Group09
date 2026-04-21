@@ -33,13 +33,15 @@ def geometric_asian_price_analytical(
     # Geometric average over n fixing dates (excluding S0):
     # G = (prod_{i=1}^n S_{t_i})^(1/n),  t_i = iT/n
 
+    sigma_sq = sigma * sigma  # single mul, avoids pow()
+
     # mean and variance of ln G
-    mu_lnG = np.log(S0) + (r - 0.5 * sigma**2) * T * (n + 1.0) / (2.0 * n)
-    var_lnG = sigma**2 * T * (n + 1.0) * (2.0 * n + 1.0) / (6.0 * n**2)
+    mu_lnG = np.log(S0) + (r - 0.5 * sigma_sq) * T * (n + 1.0) / (2.0 * n)
+    var_lnG = sigma_sq * T * (n + 1.0) * (2.0 * n + 1.0) / (6.0 * n * n)
 
     sigma_g = np.sqrt(var_lnG / T)
     mu_g = mu_lnG / T
-    adjusted_spot = np.exp(mu_lnG + 0.5 * var_lnG)
+    adjusted_spot = np.exp(mu_lnG + 0.5 * var_lnG)  # computed once, reused below
 
     vol_term = np.sqrt(var_lnG)
 
@@ -58,20 +60,16 @@ def geometric_asian_price_analytical(
             mu_g=float(mu_g),
         )
 
-    d1 = (mu_lnG - np.log(K) + var_lnG) / vol_term
+    log_K = np.log(K)  # one log; reused in d1
+    d1 = (mu_lnG - log_K + var_lnG) / vol_term
     d2 = d1 - vol_term
 
     discount = np.exp(-r * T)
 
-    call_price = discount * (
-        np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(d1)
-        - K * norm_cdf(d2)
-    )
+    # reuse adjusted_spot = exp(mu_lnG + 0.5*var_lnG) instead of recomputing
+    call_price = discount * (adjusted_spot * norm_cdf(d1) - K * norm_cdf(d2))
 
-    put_price = discount * (
-        K * norm_cdf(-d2)
-        - np.exp(mu_lnG + 0.5 * var_lnG) * norm_cdf(-d1)
-    )
+    put_price = discount * (K * norm_cdf(-d2) - adjusted_spot * norm_cdf(-d1))
 
     price = call_price if option_type == "call" else put_price
 
@@ -84,23 +82,29 @@ def geometric_asian_price_analytical(
         mu_g=float(mu_g),
     )
 
-def geometric_asian_price_mc(S0,K,r,sigma,T,n,n_paths=100000,seed = 42,option_type="call"):
-    if option_type not in {"call","put"}:
+
+def geometric_asian_price_mc(
+    S0, K, r, sigma, T, n, n_paths=100000, seed=42, option_type="call"
+):
+    if option_type not in {"call", "put"}:
         raise ValueError("optional_type must be 'call' or 'put'.")
 
-    S_path  = simulate_gbm_paths(S0=S0,r=r,sigma=sigma,n=n,n_paths=n_paths,seed=seed,T=T)
+    S_path = simulate_gbm_paths(
+        S0=S0, r=r, sigma=sigma, n=n, n_paths=n_paths, seed=seed, T=T
+    )
     G = geometric_average_mc(S_path)
 
     if option_type == "call":
-        payoff = np.maximum(G-K,0.0)
+        payoff = np.maximum(G - K, 0.0)
     else:
-        payoff = np.maximum(K-G,0.0)
+        payoff = np.maximum(K - G, 0.0)
 
-    discounted_payoff = discounted(payoff,r,T)
+    discounted_payoff = discounted(payoff, r, T)
     price = np.mean(discounted_payoff)
-    std_error = np.std(discounted_payoff,ddof = 1)/np.sqrt(n_paths)
+    std_error = np.std(discounted_payoff, ddof=1) / np.sqrt(n_paths)
 
     return price, std_error
+
 
 if __name__ == "__main__":
     S0 = 100
@@ -110,9 +114,7 @@ if __name__ == "__main__":
     T = 1.0
     n = 12
 
-    res = geometric_asian_price_analytical(
-        S0, K, r, sigma, T, n, option_type="call"
-    )
+    res = geometric_asian_price_analytical(S0, K, r, sigma, T, n, option_type="call")
     mc_price, mc_std = geometric_asian_price_mc(
         S0, K, r, sigma, T, n, option_type="call"
     )

@@ -54,16 +54,7 @@ class ControlVariateResult:
 # Main pricing function
 # ---------------------------------------------------------------------------
 def arithmetic_asian_cv(
-    S0,
-    K,
-    r,
-    T,
-    sigma,
-    n,
-    n_paths=100_000,
-    seed=42,
-    option_type="call",
-    Z=None
+    S0, K, r, T, sigma, n, n_paths=100_000, seed=42, option_type="call", Z=None
 ):
     """
     Price an arithmetic Asian option using Monte Carlo with a geometric
@@ -113,11 +104,11 @@ def arithmetic_asian_cv(
     #
     # log_inc[i, j] = log(S_{t_{j+1}} / S_{t_j})  for path i
     # ------------------------------------------------------------------
-    rng = np.random.default_rng(seed)
     if Z is None:
+        rng = np.random.default_rng(seed)
         Z = rng.normal(size=(n_paths, n))
-        ######## add an edge case here
-        ########
+    else:
+        n_paths = Z.shape[0]  # infer from provided Z to keep std_error correct
 
     log_inc = drift + vol_sqrt_dt * Z  # shape (n_paths, n)
 
@@ -271,5 +262,3 @@ if __name__ == "__main__":
         print(f"  Var reduction: {res.variance_reduction:.1f}x")
 
     print("\n" + "=" * 65)
-
-

@@ -45,7 +45,7 @@ def compare_one_case(
         n_paths=n_paths,
         seed=seed,
         option_type=option_type,
-        Z=Z
+        Z=Z,
     )
     t1 = time.perf_counter()
 
@@ -65,7 +65,7 @@ def compare_one_case(
         n_paths=n_paths,
         seed=seed,
         option_type=option_type,
-        Z=Z
+        Z=Z,
     )
     t1 = time.perf_counter()
 
@@ -182,9 +182,7 @@ def plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call"):
 
 def plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call"):
     sub = df[
-        (df["K"] == K_fixed)
-        & (df["n"] == n_fixed)
-        & (df["option_type"] == option_type)
+        (df["K"] == K_fixed) & (df["n"] == n_fixed) & (df["option_type"] == option_type)
     ].sort_values("sigma")
 
     plt.figure(figsize=(8, 5))
@@ -214,6 +212,102 @@ def plot_runtime_bar(df):
     plt.ylabel("Average runtime (seconds)")
     plt.title("Average runtime across parameter grid")
     plt.tight_layout()
+    plt.show()
+
+
+def plot_levy_convergence(
+    S0=100,
+    K=100,
+    r=0.05,
+    sigma=0.2,
+    T=1.0,
+    n_list=None,
+    n_paths=500_000,
+    seed=42,
+    option_type="call",
+):
+    """
+    Show that the Levy approximation error vanishes as the number of
+    monitoring dates n increases, confirming that Levy prices the
+    continuous-monitoring limit while MC/TW price discrete monitoring.
+    """
+    if n_list is None:
+        n_list = [4, 12, 26, 52, 126, 252, 504, 1000]
+
+    # Levy price is independent of n (continuous monitoring)
+    levy_price = levy_arithmetic_asian_price(
+        S0=S0,
+        K=K,
+        r=r,
+        sigma=sigma,
+        T=T,
+        option_type=option_type,
+    )
+
+    cv_prices = []
+    tw_prices = []
+    for n in n_list:
+        cv_res = arithmetic_asian_cv(
+            S0=S0,
+            K=K,
+            r=r,
+            T=T,
+            sigma=sigma,
+            n=n,
+            n_paths=n_paths,
+            seed=seed,
+            option_type=option_type,
+        )
+        tw_price = turnbull_wakeman_arithmetic_asian_price(
+            S0=S0,
+            K=K,
+            r=r,
+            sigma=sigma,
+            T=T,
+            n=n,
+            option_type=option_type,
+        )
+        cv_prices.append(cv_res.price)
+        tw_prices.append(tw_price)
+
+    cv_prices = np.array(cv_prices)
+    tw_prices = np.array(tw_prices)
+
+    levy_vs_cv = np.abs(levy_price - cv_prices)
+    levy_vs_tw = np.abs(levy_price - tw_prices)
+    tw_vs_cv = np.abs(tw_prices - cv_prices)
+
+    # ---- Table ----
+    print("\nLevy convergence as n -> inf:")
+    print(f"  Levy (continuous) price = {levy_price:.6f}")
+    print(
+        f"  {'n':>6s}  {'CV price':>10s}  {'TW price':>10s}  {'|Levy-CV|':>10s}  {'|Levy-TW|':>10s}  {'|TW-CV|':>10s}"
+    )
+    print("  " + "-" * 64)
+    for i, n in enumerate(n_list):
+        print(
+            f"  {n:6d}  {cv_prices[i]:10.6f}  {tw_prices[i]:10.6f}"
+            f"  {levy_vs_cv[i]:10.6f}  {levy_vs_tw[i]:10.6f}  {tw_vs_cv[i]:10.6f}"
+        )
+
+    # ---- Plot ----
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(n_list, levy_vs_cv, marker="o", label="|Levy - CV MC|")
+    ax.plot(n_list, levy_vs_tw, marker="s", label="|Levy - TW|")
+    ax.plot(
+        n_list, tw_vs_cv, marker="^", label="|TW - CV MC|", linestyle="--", alpha=0.6
+    )
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Number of monitoring dates (n)")
+    ax.set_ylabel("Absolute price difference")
+    ax.set_title(
+        "Levy continuous-monitoring error vs discrete n\n"
+        f"(S0={S0}, K={K}, r={r}, σ={sigma}, T={T})"
+    )
+    ax.legend()
+    ax.grid(True, which="both", alpha=0.3)
+    fig.tight_layout()
     plt.show()
 
 
@@ -260,3 +354,4 @@ if __name__ == "__main__":
     plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call")
     plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call")
     plot_runtime_bar(df)
+    plot_levy_convergence()
