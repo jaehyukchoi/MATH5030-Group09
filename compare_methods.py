@@ -1,7 +1,8 @@
 import time
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+
 from arithmetic_asian_MC import arithmetic_asian_price_mc
 from control_variate import arithmetic_asian_cv
 from approximation import (
@@ -21,6 +22,17 @@ def compare_one_case(
     seed=42,
     option_type="call",
 ):
+    """
+    Compare pricing methods for one parameter set.
+
+    Benchmark in this script:
+        Plain MC with the same random shocks Z.
+
+    Errors are therefore:
+        method price - plain MC price
+
+    This is a deviation-from-MC study, not a true-pricing-error study.
+    """
     result = {
         "S0": S0,
         "K": K,
@@ -30,9 +42,11 @@ def compare_one_case(
         "n": n,
         "option_type": option_type,
     }
-    rng = np.random.default_rng(seed)
 
+    # Common random numbers for Plain MC and CV MC
+    rng = np.random.default_rng(seed)
     Z = rng.normal(size=(n_paths, n))
+
     # ---------------- Plain MC ----------------
     t0 = time.perf_counter()
     mc_price, mc_se = arithmetic_asian_price_mc(
@@ -78,6 +92,10 @@ def compare_one_case(
     result["variance_reduction"] = cv_res.variance_reduction
     result["cv_time"] = t1 - t0
 
+    # Check whether standalone MC and CV-internal plain MC match
+    result["mc_cv_plain_diff"] = result["mc_price"] - result["cv_plain_mc_price"]
+    result["mc_cv_std_diff"] = result["mc_se"] - result["cv_plain_mc_std"]
+
     # ---------------- Turnbull-Wakeman ----------------
     t0 = time.perf_counter()
     tw_price = turnbull_wakeman_arithmetic_asian_price(
@@ -109,7 +127,7 @@ def compare_one_case(
     result["levy_price"] = levy_price
     result["levy_time"] = t1 - t0
 
-    # ---------------- Errors vs plain MC baseline ----------------
+    # ---------------- Deviations from Plain MC ----------------
     result["cv_error"] = result["cv_price"] - result["mc_price"]
     result["tw_error"] = result["tw_price"] - result["mc_price"]
     result["levy_error"] = result["levy_price"] - result["mc_price"]
@@ -133,11 +151,11 @@ def run_grid_experiment(
     option_type="call",
 ):
     if K_list is None:
-        K_list = [80, 90, 100, 110, 120]
+        K_list = [100]
     if sigma_list is None:
-        sigma_list = [0.1, 0.2, 0.4]
+        sigma_list = [0.2]
     if n_list is None:
-        n_list = [12, 52, 252]
+        n_list = [4, 8, 12, 26, 52, 126, 252]
 
     rows = []
 
@@ -160,165 +178,106 @@ def run_grid_experiment(
     return pd.DataFrame(rows)
 
 
-def plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call"):
-    sub = df[
-        (df["sigma"] == sigma_fixed)
-        & (df["n"] == n_fixed)
+def filter_case(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
+    return df[
+        (df["K"] == K_fixed)
+        & (df["sigma"] == sigma_fixed)
         & (df["option_type"] == option_type)
-    ].sort_values("K")
+    ].sort_values("n")
+
+
+def plot_price_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
+    sub = filter_case(df, K_fixed, sigma_fixed, option_type)
 
     plt.figure(figsize=(8, 5))
-    plt.plot(sub["K"], sub["cv_error"], marker="o", label="CV MC - MC")
-    plt.plot(sub["K"], sub["tw_error"], marker="o", label="TW - MC")
-    plt.plot(sub["K"], sub["levy_error"], marker="o", label="Levy - MC")
-    plt.axhline(0.0, linewidth=1)
-    plt.xlabel("Strike K")
-    plt.ylabel("Pricing error")
-    plt.title(f"Error vs Strike (sigma={sigma_fixed}, n={n_fixed}, type={option_type})")
+    plt.plot(sub["n"], sub["mc_price"], marker="o", label="Plain MC")
+    plt.plot(sub["n"], sub["cv_price"], marker="o", label="CV MC")
+    plt.plot(sub["n"], sub["tw_price"], marker="o", label="Turnbull-Wakeman")
+    plt.plot(sub["n"], sub["levy_price"], marker="o", label="Levy continuous")
+
+    plt.xlabel("Number of monitoring dates n")
+    plt.ylabel("Option price")
+    plt.title(
+        f"Price vs Monitoring Frequency "
+        f"(K={K_fixed}, sigma={sigma_fixed}, type={option_type})"
+    )
     plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-def plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call"):
-    sub = df[
-        (df["K"] == K_fixed) & (df["n"] == n_fixed) & (df["option_type"] == option_type)
-    ].sort_values("sigma")
+def plot_error_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
+    sub = filter_case(df, K_fixed, sigma_fixed, option_type)
 
     plt.figure(figsize=(8, 5))
-    plt.plot(sub["sigma"], sub["cv_error"], marker="o", label="CV MC - MC")
-    plt.plot(sub["sigma"], sub["tw_error"], marker="o", label="TW - MC")
-    plt.plot(sub["sigma"], sub["levy_error"], marker="o", label="Levy - MC")
+    plt.plot(sub["n"], sub["cv_error"], marker="o", label="CV MC - MC")
+    plt.plot(sub["n"], sub["tw_error"], marker="o", label="TW - MC")
+    plt.plot(sub["n"], sub["levy_error"], marker="o", label="Levy - MC")
+
     plt.axhline(0.0, linewidth=1)
-    plt.xlabel("Volatility sigma")
-    plt.ylabel("Pricing error")
-    plt.title(f"Error vs Volatility (K={K_fixed}, n={n_fixed}, type={option_type})")
+    plt.xlabel("Number of monitoring dates n")
+    plt.ylabel("Method price - Plain MC price")
+    plt.title(
+        f"Deviation vs Monitoring Frequency "
+        f"(K={K_fixed}, sigma={sigma_fixed}, type={option_type})"
+    )
     plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-def plot_runtime_bar(df):
-    avg_mc = df["mc_time"].mean()
-    avg_cv = df["cv_time"].mean()
-    avg_tw = df["tw_time"].mean()
-    avg_levy = df["levy_time"].mean()
-
-    methods = ["MC", "CV MC", "TW", "Levy"]
-    runtimes = [avg_mc, avg_cv, avg_tw, avg_levy]
+def plot_runtime_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
+    sub = filter_case(df, K_fixed, sigma_fixed, option_type)
 
     plt.figure(figsize=(8, 5))
-    plt.bar(methods, runtimes)
-    plt.ylabel("Average runtime (seconds)")
-    plt.title("Average runtime across parameter grid")
+    plt.plot(sub["n"], sub["mc_time"], marker="o", label="Plain MC")
+    plt.plot(sub["n"], sub["cv_time"], marker="o", label="CV MC")
+    plt.plot(sub["n"], sub["tw_time"], marker="o", label="Turnbull-Wakeman")
+    plt.plot(sub["n"], sub["levy_time"], marker="o", label="Levy")
+
+    plt.xlabel("Number of monitoring dates n")
+    plt.ylabel("Runtime seconds")
+    plt.title(
+        f"Runtime vs Monitoring Frequency "
+        f"(K={K_fixed}, sigma={sigma_fixed}, type={option_type})"
+    )
+    plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-def plot_levy_convergence(
-    S0=100,
-    K=100,
-    r=0.05,
-    sigma=0.2,
-    T=1.0,
-    n_list=None,
-    n_paths=500_000,
-    seed=42,
-    option_type="call",
-):
-    """
-    Show that the Levy approximation error vanishes as the number of
-    monitoring dates n increases, confirming that Levy prices the
-    continuous-monitoring limit while MC/TW price discrete monitoring.
-    """
-    if n_list is None:
-        n_list = [4, 12, 26, 52, 126, 252, 504, 1000]
+def print_summary(df):
+    cols = [
+        "K",
+        "sigma",
+        "n",
+        "mc_price",
+        "mc_se",
+        "cv_price",
+        "cv_se",
+        "variance_reduction",
+        "tw_price",
+        "levy_price",
+        "cv_error",
+        "tw_error",
+        "levy_error",
+        "mc_cv_plain_diff",
+    ]
 
-    # Levy price is independent of n (continuous monitoring)
-    levy_price = levy_arithmetic_asian_price(
-        S0=S0,
-        K=K,
-        r=r,
-        sigma=sigma,
-        T=T,
-        option_type=option_type,
-    )
-
-    cv_prices = []
-    tw_prices = []
-    for n in n_list:
-        cv_res = arithmetic_asian_cv(
-            S0=S0,
-            K=K,
-            r=r,
-            T=T,
-            sigma=sigma,
-            n=n,
-            n_paths=n_paths,
-            seed=seed,
-            option_type=option_type,
-        )
-        tw_price = turnbull_wakeman_arithmetic_asian_price(
-            S0=S0,
-            K=K,
-            r=r,
-            sigma=sigma,
-            T=T,
-            n=n,
-            option_type=option_type,
-        )
-        cv_prices.append(cv_res.price)
-        tw_prices.append(tw_price)
-
-    cv_prices = np.array(cv_prices)
-    tw_prices = np.array(tw_prices)
-
-    levy_vs_cv = np.abs(levy_price - cv_prices)
-    levy_vs_tw = np.abs(levy_price - tw_prices)
-    tw_vs_cv = np.abs(tw_prices - cv_prices)
-
-    # ---- Table ----
-    print("\nLevy convergence as n -> inf:")
-    print(f"  Levy (continuous) price = {levy_price:.6f}")
-    print(
-        f"  {'n':>6s}  {'CV price':>10s}  {'TW price':>10s}  {'|Levy-CV|':>10s}  {'|Levy-TW|':>10s}  {'|TW-CV|':>10s}"
-    )
-    print("  " + "-" * 64)
-    for i, n in enumerate(n_list):
-        print(
-            f"  {n:6d}  {cv_prices[i]:10.6f}  {tw_prices[i]:10.6f}"
-            f"  {levy_vs_cv[i]:10.6f}  {levy_vs_tw[i]:10.6f}  {tw_vs_cv[i]:10.6f}"
-        )
-
-    # ---- Plot ----
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(n_list, levy_vs_cv, marker="o", label="|Levy - CV MC|")
-    ax.plot(n_list, levy_vs_tw, marker="s", label="|Levy - TW|")
-    ax.plot(
-        n_list, tw_vs_cv, marker="^", label="|TW - CV MC|", linestyle="--", alpha=0.6
-    )
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel("Number of monitoring dates (n)")
-    ax.set_ylabel("Absolute price difference")
-    ax.set_title(
-        "Levy continuous-monitoring error vs discrete n\n"
-        f"(S0={S0}, K={K}, r={r}, σ={sigma}, T={T})"
-    )
-    ax.legend()
-    ax.grid(True, which="both", alpha=0.3)
-    fig.tight_layout()
-    plt.show()
+    print("\nMonitoring frequency study summary:\n")
+    print(df[cols].round(6))
 
 
 if __name__ == "__main__":
+    n_list = [4, 6, 8, 12, 18, 26, 36, 52, 78, 126, 180, 252]
+
     df = run_grid_experiment(
         S0=100,
         r=0.05,
         T=1.0,
-        K_list=[80, 90, 100, 110, 120],
-        sigma_list=[0.1, 0.2, 0.4],
-        n_list=[12, 52, 252],
+        K_list=[100],
+        sigma_list=[0.2],
+        n_list=n_list,
         n_paths=100000,
         seed=42,
         option_type="call",
@@ -327,31 +286,8 @@ if __name__ == "__main__":
     pd.set_option("display.width", 200)
     pd.set_option("display.max_columns", None)
 
-    print("\nFull comparison table:\n")
-    print(df.round(6))
+    print_summary(df)
 
-    print("\nKey summary columns:\n")
-    print(
-        df[
-            [
-                "K",
-                "sigma",
-                "n",
-                "mc_price",
-                "mc_se",
-                "cv_price",
-                "cv_se",
-                "variance_reduction",
-                "tw_price",
-                "levy_price",
-                "cv_abs_error",
-                "tw_abs_error",
-                "levy_abs_error",
-            ]
-        ].round(6)
-    )
-
-    plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call")
-    plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call")
-    plot_runtime_bar(df)
-    plot_levy_convergence()
+    plot_price_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
+    plot_error_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
+    plot_runtime_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
