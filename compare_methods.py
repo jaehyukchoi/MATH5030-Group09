@@ -291,3 +291,4 @@ if __name__ == "__main__":
     plot_price_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
     plot_error_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
     plot_runtime_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
+

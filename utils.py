@@ -4,9 +4,10 @@ from dataclasses import dataclass
 
 _SQRT2 = math.sqrt(2.0)  # module-level constant; avoids recomputing per call
 
-
+#the reason we keep this function is that it's fast
 def norm_cdf(x):
     return 0.5 * (1.0 + math.erf(x / _SQRT2))
+
 
 
 @dataclass
