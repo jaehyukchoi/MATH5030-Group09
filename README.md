@@ -72,59 +72,27 @@ AsianOption/
 
 ### 3.1 Black-Scholes GBM Simulation
 
-The underlying asset follows the risk-neutral geometric Brownian motion model:
+The underlying asset follows the risk-neutral geometric Brownian motion (GBM) model:
 
-$$
-dS_t = rS_t\,dt + \sigma S_t\,dW_t.
-$$
+$$dS_t = rS_t\,dt + \sigma S_t\,dW_t$$
 
-Equivalently,
+Equivalently:
 
-$$
-\frac{dS_t}{S_t} = r\,dt + \sigma\,dW_t.
-$$
+$$\frac{dS_t}{S_t} = r\,dt + \sigma\,dW_t$$
 
-The exact solution is
+The exact analytical solution is:
 
-$$
-S_t = S_0
-\exp\left[
-\left(r-\frac{1}{2}\sigma^2\right)t + \sigma W_t
-\right].
-$$
+$$S_t = S_0 \exp\left[ \left(r-\frac{1}{2}\sigma^2\right)t + \sigma W_t \right]$$
 
-For a fixing date \(t_i\), this gives
+For a specific fixing date $t_i$, this gives:
 
-$$
-S_{t_i}
-=
-S_0
-\exp\left[
-\left(r-\frac{1}{2}\sigma^2\right)t_i
-+
-\sigma W_{t_i}
-\right].
-$$
+$$S_{t_i} = S_0 \exp\left[ \left(r-\frac{1}{2}\sigma^2\right)t_i + \sigma W_{t_i} \right]$$
 
-In discrete simulation from \(t_{i-1}\) to \(t_i\), the update can be written as
+For discrete path simulation from $t_{i-1}$ to $t_i$, the exact transition update can be written as:
 
-$$
-S_{t_i}
-=
-S_{t_{i-1}}
-\exp\left[
-\left(r-\frac{1}{2}\sigma^2\right)\Delta t
-+
-\sigma \sqrt{\Delta t}\,Z_i
-\right],
-\qquad
-Z_i \sim N(0,1).
-$$
+$$S_{t_i} = S_{t_{i-1}} \exp\left[ \left(r-\frac{1}{2}\sigma^2\right)\Delta t + \sigma \sqrt{\Delta t}\,Z_i \right], \qquad Z_i \sim N(0,1)$$
 
-The simulation is vectorized using NumPy for efficiency.
-
----
-
+The simulation is vectorized using NumPy for computational efficiency.
 ### 3.2 Plain Monte Carlo
 
 The arithmetic Asian option price is estimated by
@@ -191,27 +159,15 @@ The geometric Asian option is used both as:
 
 ### 3.4 Control Variate Monte Carlo
 
-The control variate estimator is
+The control variate estimator is defined as:
 
-$$
-V_{\mathrm{CV}}
-=
-V_{\mathrm{arith}}^{\mathrm{MC}}
--
-\beta
-\left(
-V_{\mathrm{geo}}^{\mathrm{MC}}
--
-V_{\mathrm{geo}}^{\mathrm{closed}}
-\right),
-$$
+$$V_{\mathrm{CV}} = V_{\mathrm{arith}}^{\mathrm{MC}} - \beta \left( V_{\mathrm{geo}}^{\mathrm{MC}} - V_{\mathrm{geo}}^{\mathrm{closed}} \right)$$
 
 where:
-
-- \(V_{\mathrm{arith}}^{\mathrm{MC}}\) is the simulated arithmetic Asian payoff.
-- \(V_{\mathrm{geo}}^{\mathrm{MC}}\) is the simulated geometric Asian payoff.
-- \(V_{\mathrm{geo}}^{\mathrm{closed}}\) is the analytical geometric Asian price.
-- \(\beta\) is the control variate coefficient.
+* $V_{\mathrm{arith}}^{\mathrm{MC}}$ is the simulated arithmetic Asian payoff.
+* $V_{\mathrm{geo}}^{\mathrm{MC}}$ is the simulated geometric Asian payoff.
+* $V_{\mathrm{geo}}^{\mathrm{closed}}$ is the analytical geometric Asian option price.
+* $\beta$ is the control variate coefficient.
 
 The optimal coefficient is
 
