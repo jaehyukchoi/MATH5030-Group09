@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import pandas as pd
@@ -44,7 +45,6 @@ def compare_one_case(
         "option_type": option_type,
     }
 
-    # Common random numbers for Plain MC and CV MC
     rng = np.random.default_rng(seed)
     Z = rng.normal(size=(n_paths, n))
 
@@ -93,7 +93,6 @@ def compare_one_case(
     result["variance_reduction"] = cv_res.variance_reduction
     result["cv_time"] = t1 - t0
 
-    # Consistency check: standalone MC and CV-internal plain MC should match
     result["mc_cv_plain_diff"] = result["mc_price"] - result["cv_plain_mc_price"]
     result["mc_cv_std_diff"] = result["mc_se"] - result["cv_plain_mc_std"]
 
@@ -137,7 +136,6 @@ def compare_one_case(
     result["tw_abs_error"] = abs(result["tw_error"])
     result["levy_abs_error"] = abs(result["levy_error"])
 
-    # Relative errors are useful because option price levels vary across K
     eps = 1e-12
     denom = max(abs(result["mc_price"]), eps)
 
@@ -198,7 +196,13 @@ def run_strike_vol_grid(
     return pd.DataFrame(rows)
 
 
-def plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call"):
+def plot_error_vs_strike(
+    df,
+    sigma_fixed=0.2,
+    n_fixed=12,
+    option_type="call",
+    save_path=None,
+):
     sub = df[
         (df["sigma"] == sigma_fixed)
         & (df["n"] == n_fixed)
@@ -216,10 +220,20 @@ def plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call"):
     plt.title(f"Deviation vs Strike (sigma={sigma_fixed}, n={n_fixed})")
     plt.legend()
     plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+
     plt.show()
 
 
-def plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call"):
+def plot_error_vs_vol(
+    df,
+    K_fixed=100,
+    n_fixed=12,
+    option_type="call",
+    save_path=None,
+):
     sub = df[
         (df["K"] == K_fixed)
         & (df["n"] == n_fixed)
@@ -237,6 +251,10 @@ def plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call"):
     plt.title(f"Deviation vs Volatility (K={K_fixed}, n={n_fixed})")
     plt.legend()
     plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+
     plt.show()
 
 
@@ -407,6 +425,8 @@ def print_summary(df):
 
 
 if __name__ == "__main__":
+    os.makedirs("figures", exist_ok=True)
+
     df = run_strike_vol_grid(
         S0=100,
         r=0.05,
@@ -425,9 +445,22 @@ if __name__ == "__main__":
     print_summary(df)
     summarize_error_patterns(df, n_fixed=12, option_type="call")
 
-    # 1D slices
-    plot_error_vs_strike(df, sigma_fixed=0.2, n_fixed=12, option_type="call")
-    plot_error_vs_vol(df, K_fixed=100, n_fixed=12, option_type="call")
+    # Save first two diagnostic plots
+    plot_error_vs_strike(
+        df,
+        sigma_fixed=0.2,
+        n_fixed=12,
+        option_type="call",
+        save_path="figures/error_vs_strike_sigma_0p2_n12.png",
+    )
+
+    plot_error_vs_vol(
+        df,
+        K_fixed=100,
+        n_fixed=12,
+        option_type="call",
+        save_path="figures/error_vs_vol_K100_n12.png",
+    )
 
     # Signed error heatmaps: show overpricing / underpricing regions
     plot_error_heatmap(df, method="tw", n_fixed=12, option_type="call", error_kind="signed")

@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import pandas as pd
@@ -162,6 +163,8 @@ def run_grid_experiment(
     for K in K_list:
         for sigma in sigma_list:
             for n in n_list:
+                print(f"Running K={K}, sigma={sigma}, n={n}")
+
                 row = compare_one_case(
                     S0=S0,
                     K=K,
@@ -226,7 +229,13 @@ def plot_error_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
     plt.show()
 
 
-def plot_runtime_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
+def plot_runtime_vs_n(
+    df,
+    K_fixed=100,
+    sigma_fixed=0.2,
+    option_type="call",
+    save_path=None,
+):
     sub = filter_case(df, K_fixed, sigma_fixed, option_type)
 
     plt.figure(figsize=(8, 5))
@@ -243,6 +252,10 @@ def plot_runtime_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call"):
     )
     plt.legend()
     plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+
     plt.show()
 
 
@@ -269,6 +282,8 @@ def print_summary(df):
 
 
 if __name__ == "__main__":
+    os.makedirs("figures", exist_ok=True)
+
     n_list = [4, 6, 8, 12, 18, 26, 36, 52, 78, 126, 180, 252]
 
     df = run_grid_experiment(
@@ -288,7 +303,24 @@ if __name__ == "__main__":
 
     print_summary(df)
 
-    plot_price_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
-    plot_error_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
-    plot_runtime_vs_n(df, K_fixed=100, sigma_fixed=0.2, option_type="call")
+    plot_price_vs_n(
+        df,
+        K_fixed=100,
+        sigma_fixed=0.2,
+        option_type="call",
+    )
 
+    plot_error_vs_n(
+        df,
+        K_fixed=100,
+        sigma_fixed=0.2,
+        option_type="call",
+    )
+
+    plot_runtime_vs_n(
+        df,
+        K_fixed=100,
+        sigma_fixed=0.2,
+        option_type="call",
+        save_path="figures/runtime_vs_monitoring_frequency_K100_sigma_0p2.png",
+    )
