@@ -234,7 +234,23 @@ $$
 
 Because arithmetic and geometric Asian payoffs are highly correlated, this greatly reduces Monte Carlo variance.
 
+### Example: Variance Reduction
+
+For the parameter setting
+
+$$
+S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad n = 12,
+$$
+
+The control variate estimator significantly reduces the Monte Carlo standard error.
+
+| Option Type | Plain MC Price | CV Price | Plain MC Std. Error | CV Std. Error | Geometric Asian Closed-Form | Beta |
+|---|---:|---:|---:|---:|---:|---:|
+| Call | \(6.179168\) | \(6.156463\) | \(0.012055\) | \(0.000338\) | \(5.940200\) | \(1.0316\) |
+| Put | \(3.523196\) | \(3.534525\) | \(0.007849\) | \(0.000199\) | \(3.651734\) | \(0.9761\) |
+The results show that using the geometric Asian option as a control variate reduces the Monte Carlo variance by more than \(1000\times\) for both calls and puts in this example.
 The control variate estimator is used as the benchmark price in the residual correction experiments.
+
 
 ---
 
@@ -267,7 +283,20 @@ where:
 
 $$d_1 = \frac{\ln\left( \frac{\mathbb{E}[A]}{K} \right) + \frac{1}{2}\sigma_A^2}{\sigma_A}, \qquad d_2 = d_1 - \sigma_A$$
 
+### Example: Pricing Results Across Methods
 
+For the parameter setting
+
+$$
+S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad n = 12,
+$$
+
+the pricing results across different methods are:
+
+| Option Type | Plain MC | Control Variate MC | Turnbull-Wakeman | Levy Approximation | Geometric Asian Closed-Form |
+|---|---:|---:|---:|---:|---:|
+| Call | \(6.179168\) | \(6.156463\) | \(6.174171\) | \(5.782838\) | \(5.940200\) |
+| Put | \(3.523196\) | \(3.534525\) | \(3.552611\) | \(3.364630\) | \(3.651734\) |
 
 ## 4. Bias Correction Idea
 
