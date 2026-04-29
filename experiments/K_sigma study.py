@@ -425,7 +425,7 @@ def print_summary(df):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("../figures", exist_ok=True)
 
     df = run_strike_vol_grid(
         S0=100,
@@ -451,7 +451,7 @@ if __name__ == "__main__":
         sigma_fixed=0.2,
         n_fixed=12,
         option_type="call",
-        save_path="figures/error_vs_strike_sigma_0p2_n12.png",
+        save_path="../figures/error_vs_strike_sigma_0p2_n12.png",
     )
 
     plot_error_vs_vol(
@@ -459,7 +459,7 @@ if __name__ == "__main__":
         K_fixed=100,
         n_fixed=12,
         option_type="call",
-        save_path="figures/error_vs_vol_K100_n12.png",
+        save_path="../figures/error_vs_vol_K100_n12.png",
     )
 
     # Signed error heatmaps: show overpricing / underpricing regions

@@ -36,17 +36,8 @@ def build_tw_residual_dataset(
         n_list = [12, 26, 52, 126]
 
     rows = []
-
-    total = (
-        len(S0_list)
-        * len(T_list)
-        * len(moneyness_list)
-        * len(sigma_list)
-        * len(n_list)
-    )
-
+    total = (len(S0_list) * len(T_list) * len(moneyness_list)* len(sigma_list)* len(n_list))
     count = 0
-
     for S0 in S0_list:
         for T in T_list:
             for moneyness in moneyness_list:
@@ -60,9 +51,7 @@ def build_tw_residual_dataset(
                             f"S0={S0}, K={K:.4f}, m={moneyness}, "
                             f"T={T}, sigma={sigma}, n={n}"
                         )
-
                         case_seed = seed + count
-
                         cv_result = arithmetic_asian_cv(
                             S0=S0,
                             K=K,
@@ -74,10 +63,8 @@ def build_tw_residual_dataset(
                             seed=case_seed,
                             option_type=option_type,
                         )
-
                         cv_mc_price = cv_result.price
                         cv_mc_se = cv_result.std_error
-
                         tw_price = turnbull_wakeman_arithmetic_asian_price(
                             S0=S0,
                             K=K,
@@ -87,9 +74,7 @@ def build_tw_residual_dataset(
                             n=n,
                             option_type=option_type,
                         )
-
                         residual = tw_price - cv_mc_price
-
                         rows.append(
                             {
                                 "S0": S0,
