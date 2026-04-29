@@ -716,3 +716,25 @@ The method is especially effective for interpolation within a calibrated paramet
 An interactive demo showed the different methods and plot is available here:
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RyanHou0303/AsianOption/blob/main/demo_bias_corrected_tw_with_plots_colab_ready.ipynb)
+
+---
+
+## References
+
+This project is related to the classical Asian option pricing literature and numerical approximation methods:
+
+1. Kemna, A. G. Z., & Vorst, A. C. F. (1990). **A pricing method for options based on average asset values**. *Journal of Banking & Finance*, 14(1), 113–129.  
+
+   This paper gives the well-known closed-form solution for geometric-average Asian options, which is used here as the control variate benchmark.
+
+2. Turnbull, S. M., & Wakeman, L. M. (1991). **A quick algorithm for pricing European average options**. *Journal of Financial and Quantitative Analysis*, 26(3), 377–389.  
+
+   This is the classical Turnbull-Wakeman approximation used as the fast analytical baseline in this project.
+
+3. Levy, E. (1992). **Pricing European average rate currency options**. *Journal of International Money and Finance*, 11(5), 474–491.  
+
+   This paper develops a lognormal approximation approach for arithmetic-average option pricing and is related to the Levy approximation implemented in this project.
+
+4. Curran, M. (1994). **Valuing Asian and portfolio options by conditioning on the geometric mean price**. *Management Science*, 40(12), 1705–1711.  
+
+   This paper introduces a conditioning approach based on the geometric average, another important approximation method for arithmetic Asian options.
