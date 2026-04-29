@@ -300,9 +300,7 @@ Here, $\Phi(\cdot)$ is the standard normal cumulative distribution function.
 
 For the parameter setting
 
-$$
-S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad n = 12,
-$$
+$$S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad n = 12,$$
 
 the pricing results across different methods are:
 
@@ -340,6 +338,7 @@ A positive residual means that the Turnbull-Wakeman approximation overprices the
 The corrected price is then
 
 $$C_{\mathrm{corrected}} = C_{\mathrm{TW}} - \widehat{\varepsilon}_{\mathrm{TW}}.$$
+
 This approach offers two primary advantages:
 
 1. The analytical approximation already captures most of the option pricing structure.
@@ -353,61 +352,31 @@ In essence, the model does not function as a black-box pricer. Instead, it acts 
 
 The model learns a mapping from option features to the scaled Turnbull-Wakeman residual:
 
-$$
-\widehat{y}
-=
-f_\theta(x).
-$$
+$$\widehat{y} = f_\theta(x).$$
 
 The base feature vector is
 
-$$
-x
-=
-\left[
-\ln\left(\frac{K}{S_0}\right),
-\ \sigma,
-\ T,
-\ \frac{1}{n}
-\
-\right]^\top.
-$$
+$$x = \left[ \ln\left(\frac{K}{S_0}\right), \ \sigma, \ T, \ \frac{1}{n} \ \right]^\top.$$
 
 To capture nonlinear interactions in the residual surface, the base features are expanded into polynomial features:
 
-$$
-\phi_d(x)
-=
-\left[
-1,\ x_1,\ldots,x_p,\ x_1^2,\ x_1x_2,\ldots,\ x_p^d
-\right]^\top,
-$$
+$$\phi_d(x) = \left[ 1,\ x_1,\ldots,x_p,\ x_1^2,\ x_1x_2,\ldots,\ x_p^d \right]^\top,$$
 
-where \(d\) is the polynomial degree and \(p\) is the number of base features.
+where $d$ is the polynomial degree and $p$ is the number of base features.
 
 The Ridge regression model is then fitted in the polynomial feature space:
 
-$$
-\widehat{y}
-=
-\beta_0 + \phi_d(x)^\top \beta.
-$$
+$$\widehat{y} = \beta_0 + \phi_d(x)^\top \beta.$$
 
 The coefficients are estimated by minimizing the penalized least-squares objective:
 
-$$
-\min_{\beta_0,\beta} \sum_{i=1}^{N} \left( y_i - \beta_0 - \phi_d(x_i)^\top \beta \right)^2 + \lambda \lVert \beta \rVert_2^2.
-$$
+$$\min_{\beta_0,\beta} \sum_{i=1}^{N} \left( y_i - \beta_0 - \phi_d(x_i)^\top \beta \right)^2 + \lambda \lVert \beta \rVert_2^2.$$
 
 The intercepts not penalized. The Ridge penalty shrinks the polynomial coefficients and helps reduce overfitting, especially when higher-order interaction terms are included.
 
 After predicting the scaled residual , the unscaled residual estimate is
 
-$$
-\widehat{\varepsilon}_{\mathrm{TW}}
-=
-S_0 \widehat{y}.
-$$
+$$\widehat{\varepsilon}_{\mathrm{TW}} = S_0 \widehat{y}.$$
 
 Since the residual is defined as
 
@@ -420,53 +389,34 @@ $$C_{\mathrm{corrected}} = C_{\mathrm{TW}} - \widehat{\varepsilon}_{\mathrm{TW}}
 Equivalently,
 
 $$C_{\mathrm{corrected}} = C_{\mathrm{TW}} - S_0\widehat{y}.$$
+
 ### Dataset
 
 The current dataset contains $3360$ parameter combinations.
 
 The grid includes multiple spot levels:
 
-$$
-S_0 \in \{80,90,100,110,120\}.
-$$
+$$S_0 \in \{80,90,100,110,120\}.$$
 
 For each spot level, the strike is generated through a fixed moneyness grid:
 
-$$
-m
-=
-\frac{K}{S_0},
-\qquad
-m
-\in
-\{0.7,0.8,0.9,1.0,1.1,1.2,1.3\}.
-$$
+$$m = \frac{K}{S_0}, \qquad m \in \{0.7,0.8,0.9,1.0,1.1,1.2,1.3\}.$$
 
 Equivalently,
 
-$$
-K = S_0m.
-$$
+$$K = S_0m.$$
 
 The dataset also varies maturity, volatility, and monitoring frequency:
 
-$$
-T \in \{0.25,0.5,1.0,2.0\},
-$$
+$$T \in \{0.25,0.5,1.0,2.0\},$$
 
-$$
-\sigma \in \{0.1,0.2,0.3,0.4,0.5,0.6\},
-$$
+$$\sigma \in \{0.1,0.2,0.3,0.4,0.5,0.6\},$$
 
-$$
-n \in \{12,26,52,126\}.
-$$
+$$n \in \{12,26,52,126\}.$$
 
 Therefore, the total number of parameter combinations is
 
-$$
-5 \times 4 \times 7 \times 6 \times 4 = 3360.
-$$
+$$5 \times 4 \times 7 \times 6 \times 4 = 3360.$$
 
 For each parameter combination, the following quantities are computed:
 
@@ -486,14 +436,7 @@ This section evaluates the robustness of the proposed Turnbull-Wakeman bias-corr
 
 The model learns the scale-normalized residual
 
-$$
-y =
-\frac{
-C_{\mathrm{TW}} - C_{\mathrm{CV}}
-}{
-S_0
-},
-$$
+$$y = \frac{ C_{\mathrm{TW}} - C_{\mathrm{CV}} }{ S_0 },$$
 
 where $C_{\mathrm{TW}}$ is the Turnbull-Wakeman approximation and $C_{\mathrm{CV}}$ is the control-variate Monte Carlo benchmark.
 
@@ -503,9 +446,7 @@ $$C_{\mathrm{corrected}} = C_{\mathrm{TW}} - S_0 \widehat{y}.$$
 
 The model uses the following economically motivated features:
 
-$$
-\log(K/S_0), \qquad \sigma, \qquad T, \qquad \frac{1}{n}.
-$$
+$$\log(K/S_0), \qquad \sigma, \qquad T, \qquad \frac{1}{n}.$$
 
 A third-degree polynomial Ridge regression is used to capture nonlinear interactions while controlling overfitting.
 
@@ -517,17 +458,15 @@ The robustness dataset is built on the following parameter grid:
 
 | Parameter | Values |
 |---|---|
-| Spot \(S_0\) | 80, 90, 100, 110, 120 |
-| Moneyness \(K/S_0\) | 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3 |
-| Volatility \(\sigma\) | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 |
-| Maturity \(T\) | 0.25, 0.5, 1.0, 2.0 |
-| Monitoring dates \(n\) | 12, 26, 52, 126 |
+| Spot $S_0$ | 80, 90, 100, 110, 120 |
+| Moneyness $K/S_0$ | 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3 |
+| Volatility $\sigma$ | 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 |
+| Maturity $T$ | 0.25, 0.5, 1.0, 2.0 |
+| Monitoring dates $n$ | 12, 26, 52, 126 |
 
 Total number of cases:
 
-$$
-5 \times 7 \times 6 \times 4 \times 4 = 3360.
-$$
+$$5 \times 7 \times 6 \times 4 \times 4 = 3360.$$
 
 For each parameter combination, the control-variate Monte Carlo price is used as the benchmark.
 
@@ -535,12 +474,12 @@ For each parameter combination, the control-variate Monte Carlo price is used as
 
 ## Main Robustness Summary
 
-| Test | Test Size | Test \(R^2\) | Original TW MAE | Corrected TW MAE | MAE Reduction | Improved Cases |
+| Test | Test Size | Test $R^2$ | Original TW MAE | Corrected TW MAE | MAE Reduction | Improved Cases |
 |---|---:|---:|---:|---:|---:|---:|
 | Random Train/Test Split | 840 | 0.9912 | 0.091455 | 0.012304 | **86.55%** | 66.90% |
-| High Volatility Holdout, \(\sigma=0.6\) | 560 | 0.9856 | 0.256846 | 0.022913 | **91.08%** | 93.04% |
-| Long Maturity Holdout, \(T=2.0\) | 840 | 0.9625 | 0.228149 | 0.042074 | **81.56%** | 68.10% |
-| High-\(n\) Holdout, \(n=126\) | 840 | 0.9901 | 0.095214 | 0.013296 | **86.04%** | 70.48% |
+| High Volatility Holdout, $\sigma=0.6$ | 560 | 0.9856 | 0.256846 | 0.022913 | **91.08%** | 93.04% |
+| Long Maturity Holdout, $T=2.0$ | 840 | 0.9625 | 0.228149 | 0.042074 | **81.56%** | 68.10% |
+| High-$n$ Holdout, $n=126$ | 840 | 0.9901 | 0.095214 | 0.013296 | **86.04%** | 70.48% |
 | Checkerboard Interpolation | 1680 | 0.9905 | 0.093009 | 0.012496 | **86.56%** | 68.39% |
 
 The correction framework performs strongly across the main robustness tests. In most cases, the corrected Turnbull-Wakeman approximation reduces MAE by more than 80%.
@@ -565,11 +504,11 @@ The small standard deviation indicates that the random train-test result is not 
 
 ---
 
-## Leave-One-\(S_0\)-Out Robustness
+## Leave-One-$S_0$-Out Robustness
 
 In this test, one spot level is completely removed from the training set and used only for testing.
 
-| Held-out \(S_0\) | Test Size | Test \(R^2\) | Original TW MAE | Corrected TW MAE | MAE Reduction | Improved Cases |
+| Held-out $S_0$ | Test Size | Test $R^2$ | Original TW MAE | Corrected TW MAE | MAE Reduction | Improved Cases |
 |---:|---:|---:|---:|---:|---:|---:|
 | 80 | 672 | 0.9911 | 0.074612 | 0.009795 | **86.87%** | 69.05% |
 | 90 | 672 | 0.9915 | 0.083539 | 0.010692 | **87.20%** | 69.35% |
@@ -577,11 +516,9 @@ In this test, one spot level is completely removed from the training set and use
 | 110 | 672 | 0.9913 | 0.102198 | 0.013155 | **87.13%** | 69.20% |
 | 120 | 672 | 0.9910 | 0.111560 | 0.014665 | **86.86%** | 69.79% |
 
-The leave-one-\(S_0\)-out results are very stable. The MAE reduction remains around 87% for every held-out spot level. This supports the scale-normalized residual design:
+The leave-one-$S_0$-out results are very stable. The MAE reduction remains around 87% for every held-out spot level. This supports the scale-normalized residual design:
 
-$$
-\frac{C_{\mathrm{TW}} - C_{\mathrm{CV}}}{S_0}.
-$$
+$$\frac{C_{\mathrm{TW}} - C_{\mathrm{CV}}}{S_0}.$$
 
 ---
 
@@ -589,7 +526,7 @@ $$
 
 In this test, one moneyness level is completely removed from the training set and used only for testing.
 
-| Held-out Moneyness \(K/S_0\) | Test Size | Test \(R^2\) | Original TW MAE | Corrected TW MAE | MAE Reduction | Improved Cases |
+| Held-out Moneyness $K/S_0$ | Test Size | Test $R^2$ | Original TW MAE | Corrected TW MAE | MAE Reduction | Improved Cases |
 |---:|---:|---:|---:|---:|---:|---:|
 | 0.7 | 480 | 0.7773 | 0.104288 | 0.082079 | **21.30%** | 33.33% |
 | 0.8 | 480 | 0.9839 | 0.133809 | 0.023001 | **82.81%** | 58.33% |
@@ -599,12 +536,12 @@ In this test, one moneyness level is completely removed from the training set an
 | 1.2 | 480 | 0.9709 | 0.055000 | 0.014226 | **74.14%** | 73.54% |
 | 1.3 | 480 | 0.6796 | 0.048568 | 0.038396 | **20.94%** | 44.58% |
 
-The model performs well for interior moneyness levels but is weaker at the boundary levels \(0.7\) and \(1.3\).
+The model performs well for interior moneyness levels but is weaker at the boundary levels $0.7$ and $1.3$.
 
-This is expected because holding out \(0.7\) or \(1.3\) is a boundary extrapolation test:
+This is expected because holding out $0.7$ or $1.3$ is a boundary extrapolation test:
 
-- Holding out \(0.7\): the model only sees \(K/S_0 >= 0.8\) during training.
-- Holding out \(1.3\): the model only sees \(K/S_0 <=1.2\) during training.
+- Holding out $0.7$: the model only sees $K/S_0 \ge 0.8$ during training.
+- Holding out $1.3$: the model only sees $K/S_0 \le 1.2$ during training.
 
 Therefore, the framework interpolates well inside the moneyness grid but is less reliable when extrapolating beyond the observed moneyness range.
 
@@ -612,7 +549,7 @@ Therefore, the framework interpolates well inside the moneyness grid but is less
 
 ## Moneyness Interpolation vs Boundary Extrapolation
 
-| Region | Held-out Moneyness | Average MAE Reduction | Average Test \(R^2\) | Interpretation |
+| Region | Held-out Moneyness | Average MAE Reduction | Average Test $R^2$ | Interpretation |
 |---|---|---:|---:|---|
 | Boundary Extrapolation | 0.7, 1.3 | **21.12%** | 0.7285 | Weak extrapolation at grid edges |
 | Interior Moneyness | 0.8, 0.9, 1.0, 1.1, 1.2 | **82.69%** | 0.9848 | Strong interpolation inside the grid |
@@ -639,11 +576,11 @@ This is the main limitation of the current framework. The correction surface is 
 |---|---|
 | The correction framework is effective overall | Random split reduces MAE by **86.55%** |
 | Results are stable under random partitions | K-fold CV mean scaled MAE = **0.00012273**, std = **0.00000391** |
-| High-volatility regime is handled well | \(\sigma=0.6\) holdout reduces MAE by **91.08%** |
-| Long maturity is harder but still improved | \(T=2.0\) holdout reduces MAE by **81.56%** |
-| Scaling by \(S_0\) works well | Leave-one-\(S_0\)-out reductions are all around **87%** |
+| High-volatility regime is handled well | $\sigma=0.6$ holdout reduces MAE by **91.08%** |
+| Long maturity is harder but still improved | $T=2.0$ holdout reduces MAE by **81.56%** |
+| Scaling by $S_0$ works well | Leave-one-$S_0$-out reductions are all around **87%** |
 | The model interpolates smoothly across the grid | Checkerboard reduction = **86.56%** |
-| Main weakness is boundary moneyness extrapolation | \(K/S_0=0.7\) and \(1.3\) reduce MAE by only about **21%** |
+| Main weakness is boundary moneyness extrapolation | $K/S_0=0.7$ and $1.3$ reduce MAE by only about **21%** |
 
 ---
 
@@ -715,14 +652,13 @@ Overall, the off-grid test suggests that the residual surface is smooth and can 
 
 ## Conclusion
 
-The proposed Turnbull-Wakeman bias-correction framework is robust across most tested regimes. The correction reduces pricing MAE by approximately 81% to 91% in the main robustness tests, including random train-test split, high-volatility holdout, long-maturity holdout, high-monitoring-frequency holdout, leave-one-\(S_0\)-out, and checkerboard interpolation.
+The proposed Turnbull-Wakeman bias-correction framework is robust across most tested regimes. The correction reduces pricing MAE by approximately 81% to 91% in the main robustness tests, including random train-test split, high-volatility holdout, long-maturity holdout, high-monitoring-frequency holdout, leave-one-$S_0$-out, and checkerboard interpolation.
 
-The strongest evidence comes from the leave-one-\(S_0\)-out tests, where the MAE reduction remains around 87% across all held-out spot levels. This confirms that modeling the scaled residual is effective for generalizing across spot levels.
+The strongest evidence comes from the leave-one-$S_0$-out tests, where the MAE reduction remains around 87% across all held-out spot levels. This confirms that modeling the scaled residual is effective for generalizing across spot levels.
 
-The main limitation is boundary moneyness extrapolation. When the extreme moneyness levels \(0.7\) and \(1.3\) are entirely excluded from training, performance drops significantly. In contrast, interior moneyness levels from \(0.8\) to \(1.2\) show strong interpolation performance.
+The main limitation is boundary moneyness extrapolation. When the extreme moneyness levels $0.7$ and $1.3$ are entirely excluded from training, performance drops significantly. In contrast, interior moneyness levels from $0.8$ to $1.2$ show strong interpolation performance.
 
 Overall, the results suggest that the residual-learning correction captures a stable and systematic structure in the Turnbull-Wakeman approximation error.
-
 ## 5. Future Work
 
 Planned extensions include:
