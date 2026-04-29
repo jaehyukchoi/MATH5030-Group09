@@ -715,4 +715,4 @@ The method is especially effective for interpolation within a calibrated paramet
 
 An interactive demo showed the different methods and plot is available here:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RyanHou0303/AsianOption/blob/main/demo_bias_corrected_tw_with_plots_fixed.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RyanHou0303/AsianOption/blob/main/demo_bias_corrected_tw_with_plots_colab_ready.ipynb)
