@@ -8,10 +8,10 @@ from scipy.interpolate import RegularGridInterpolator
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error
 
-from control_variate import arithmetic_asian_cv
-from approximation import turnbull_wakeman_arithmetic_asian_price
+from asianoption.control_variate import arithmetic_asian_cv
+from asianoption.approximation import turnbull_wakeman_arithmetic_asian_price
 
 
 # ============================================================

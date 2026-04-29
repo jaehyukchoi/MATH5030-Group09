@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from control_variate import arithmetic_asian_cv
-from approximation import turnbull_wakeman_arithmetic_asian_price
+from asianoption.control_variate import arithmetic_asian_cv
+from asianoption.approximation import turnbull_wakeman_arithmetic_asian_price
 
 
 def build_tw_residual_dataset(

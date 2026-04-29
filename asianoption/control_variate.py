@@ -31,7 +31,7 @@ Reference:
 
 import numpy as np
 from dataclasses import dataclass
-from geometric_asian import geometric_asian_price_analytical
+from .geometric_asian import geometric_asian_price_analytical
 
 
 # ---------------------------------------------------------------------------

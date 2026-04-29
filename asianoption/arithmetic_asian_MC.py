@@ -1,5 +1,5 @@
 import numpy as np
-from utils import (
+from .utils import (
 
     simulate_gbm_paths,
     arithmetic_average_mc,

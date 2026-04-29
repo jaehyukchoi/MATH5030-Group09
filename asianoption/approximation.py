@@ -1,5 +1,5 @@
 import numpy as np
-from utils import norm_cdf
+from .utils import norm_cdf
 
 
 def turnbull_wakeman_arithmetic_asian_price(S0, K, r, sigma, T, n, option_type="call"):

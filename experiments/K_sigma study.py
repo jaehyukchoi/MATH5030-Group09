@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from arithmetic_asian_MC import arithmetic_asian_price_mc
-from control_variate import arithmetic_asian_cv
-from approximation import (
+from asianoption.arithmetic_asian_MC import arithmetic_asian_price_mc
+from asianoption.control_variate import arithmetic_asian_cv
+from asianoption.approximation import (
     turnbull_wakeman_arithmetic_asian_price,
     levy_arithmetic_asian_price,
 )

@@ -6,6 +6,110 @@ The main goal is to build a pricing framework that keeps the speed of analytical
 
 ---
 
+## Installation
+
+The package is available on PyPI:
+
+```bash
+pip install asianoption
+```
+
+After installation, the package can be imported as:
+
+```python
+import asianoption
+```
+
+---
+
+## Quick Start
+
+```python
+from asianoption.approximation import turnbull_wakeman_arithmetic_asian_price
+from asianoption.control_variate import arithmetic_asian_cv
+from asianoption.arithmetic_asian_MC import arithmetic_asian_price_mc
+
+S0 = 100
+K = 100
+r = 0.05
+sigma = 0.2
+T = 1.0
+n = 12
+
+tw_price = turnbull_wakeman_arithmetic_asian_price(
+    S0=S0,
+    K=K,
+    r=r,
+    sigma=sigma,
+    T=T,
+    n=n,
+    option_type="call",
+)
+
+mc_price, mc_se = arithmetic_asian_price_mc(
+    S0=S0,
+    K=K,
+    r=r,
+    T=T,
+    sigma=sigma,
+    n=n,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+)
+
+cv_result = arithmetic_asian_cv(
+    S0=S0,
+    K=K,
+    r=r,
+    T=T,
+    sigma=sigma,
+    n=n,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+)
+
+print("Turnbull-Wakeman price:", tw_price)
+print("Plain MC price:", mc_price)
+print("Plain MC standard error:", mc_se)
+print("Control Variate MC price:", cv_result.price)
+print("Control Variate MC standard error:", cv_result.std_error)
+print("Variance reduction:", cv_result.variance_reduction)
+```
+
+---
+
+## Available Methods
+
+| Method | Description |
+|---|---|
+| Plain Monte Carlo | Simulates GBM paths and prices arithmetic Asian options by discounted payoff averaging. |
+| Control Variate Monte Carlo | Uses the geometric Asian option as a control variate to reduce Monte Carlo variance. |
+| Geometric Asian Closed Form | Analytical benchmark for geometric Asian options under GBM. |
+| Turnbull-Wakeman Approximation | Fast analytical approximation for arithmetic Asian options. |
+| Levy Approximation | Continuous-time approximation for arithmetic Asian options. |
+
+---
+
+## Development Install
+
+To run the research scripts and notebooks from the GitHub repository:
+
+```bash
+git clone https://github.com/RyanHou0303/AsianOption.git
+cd AsianOption
+pip install -e .
+pip install -r requirements.txt
+```
+
+Example scripts:
+
+```bash
+python scripts/robustness_check.py
+python scripts/alternative_method_interpolation.py
+```
+
 ## 1. Motivation
 
 Asian options depend on the average price of the underlying asset over time. For a discretely monitored arithmetic Asian call option, the arithmetic average is
@@ -604,3 +708,11 @@ Control variate Monte Carlo is accurate but computationally expensive.
 This project shows that the bias of the Turnbull-Wakeman approximation is learnable. By modeling the residual relative to a control variate benchmark, the corrected approximation achieves much better accuracy while preserving the speed of an analytical approximation.
 
 The method is especially effective for interpolation within a calibrated parameter grid, while extrapolation to extreme moneyness remains the main challenge.
+
+---
+
+## Interactive Demo
+
+An interactive demo showed the different methods and plot is available here:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RyanHou0303/AsianOption/blob/main/demo_bias_corrected_tw_with_plots_fixed.ipynb)
