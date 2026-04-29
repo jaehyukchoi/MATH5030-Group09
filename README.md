@@ -96,15 +96,7 @@ $$
 
 For a fixing date $t_i$, this gives
 
-$$
-S_{t_i}
-=
-S_0
-\exp\left[
-\left(r-\frac{1}{2}\sigma^2\right)t_i+\sigma W_{t_i}
-\right].
-$$
-
+$$S_{t_i} = S_0 \exp\left[ \left(r-\frac{1}{2}\sigma^2\right)t_i+\sigma W_{t_i} \right].$$
 
 ---
 
@@ -112,38 +104,15 @@ $$
 
 The arithmetic Asian option price is estimated by
 
-$$
-\text{Price}
-=
-e^{-rT}
-\mathbb{E}
-\left[
-\max(A-K,0)
-\right].
-$$
+$$\text{Price} = e^{-rT} \mathbb{E} \left[ \max(A-K,0) \right].$$
 
 Equivalently,
 
-$$
-\text{Price}
-=
-e^{-rT}
-\mathbb{E}
-\left[
-(A-K)^+
-\right].
-$$
+$$\text{Price} = e^{-rT} \mathbb{E} \left[ (A-K)^+ \right].$$
 
 The plain Monte Carlo estimator is
 
-$$
-\widehat{V}_{\mathrm{arith}}^{\mathrm{MC}}
-=
-e^{-rT}
-\frac{1}{M}
-\sum_{j=1}^{M}
-\left(A^{(j)}-K\right)^+,
-$$
+$$\widehat{V}_{\mathrm{arith}}^{\mathrm{MC}} = e^{-rT} \frac{1}{M} \sum_{j=1}^{M} \left(A^{(j)}-K\right)^+,$$
 
 where $M$ is the number of simulated paths and $A^{(j)}$ is the arithmetic average along path $j$.
 
@@ -155,13 +124,7 @@ Plain Monte Carlo is simple but can have relatively high variance, especially wh
 
 The geometric average is
 
-$$
-G
-=
-\left(
-\prod_{i=1}^{n} S_{t_i}
-\right)^{1/n}.
-$$
+$$G = \left( \prod_{i=1}^{n} S_{t_i} \right)^{1/n}.$$
 
 Under GBM, the logarithm of the geometric average is normally distributed, so the geometric Asian option has a closed-form solution.
 
@@ -176,18 +139,7 @@ The geometric Asian option is used both as:
 
 The control variate estimator is defined as
 
-$$
-V_{\mathrm{CV}}
-=
-V_{\mathrm{arith}}^{\mathrm{MC}}
--
-\beta
-\left(
-V_{\mathrm{geo}}^{\mathrm{MC}}
--
-V_{\mathrm{geo}}^{\mathrm{closed}}
-\right).
-$$
+$$V_{\mathrm{CV}} = V_{\mathrm{arith}}^{\mathrm{MC}} - \beta \left( V_{\mathrm{geo}}^{\mathrm{MC}} - V_{\mathrm{geo}}^{\mathrm{closed}} \right).$$
 
 where:
 
@@ -198,22 +150,7 @@ where:
 
 The optimal coefficient is
 
-$$
-\beta^*
-=
-\frac{
-\mathrm{Cov}
-\left(
-V_{\mathrm{arith}}^{\mathrm{MC}},
-V_{\mathrm{geo}}^{\mathrm{MC}}
-\right)
-}{
-\mathrm{Var}
-\left(
-V_{\mathrm{geo}}^{\mathrm{MC}}
-\right)
-}.
-$$
+$$\beta^* = \frac{ \mathrm{Cov} \left( V_{\mathrm{arith}}^{\mathrm{MC}}, V_{\mathrm{geo}}^{\mathrm{MC}} \right) }{ \mathrm{Var} \left( V_{\mathrm{geo}}^{\mathrm{MC}} \right) }.$$
 
 Because arithmetic and geometric Asian payoffs are highly correlated, this greatly reduces Monte Carlo variance.
 
@@ -221,9 +158,7 @@ Because arithmetic and geometric Asian payoffs are highly correlated, this great
 
 For the parameter setting
 
-$$
-S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad n = 12,
-$$
+$$S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad n = 12,$$
 
 the control variate estimator significantly reduces the Monte Carlo standard error.
 
@@ -246,44 +181,19 @@ The Turnbull-Wakeman approximation is one of the most classic analytical approxi
 
 This method uses moment matching to approximate the arithmetic average $A$ as a lognormal random variable $\widetilde{A}$:
 
-$$
-A \approx \widetilde{A},
-\qquad
-\widetilde{A} \sim \mathrm{Lognormal}(\mu_A,\sigma_A^2).
-$$
+$$A \approx \widetilde{A}, \qquad \widetilde{A} \sim \mathrm{Lognormal}(\mu_A,\sigma_A^2).$$
 
 The parameters $\mu_A$ and $\sigma_A^2$ are chosen to match the first two moments of the true arithmetic average:
 
-$$
-\mathbb{E}[\widetilde{A}]
-=
-\mathbb{E}[A],
-\qquad
-\mathrm{Var}(\widetilde{A})
-=
-\mathrm{Var}(A).
-$$
+$$\mathbb{E}[\widetilde{A}] = \mathbb{E}[A], \qquad \mathrm{Var}(\widetilde{A}) = \mathrm{Var}(A).$$
 
 #### 2. Parameter Calculation
 
 Under the lognormal assumption, the parameter $\sigma_A^2$, which is the variance of $\ln \widetilde{A}$ used in the pricing formula, is calculated as
 
-$$
-\sigma_A^2
-=
-\ln
-\left(
-1+
-\frac{
-\mathrm{Var}(A)
-}{
-\mathbb{E}[A]^2
-}
-\right).
-$$
+$$\sigma_A^2 = \ln \left( 1+ \frac{ \mathrm{Var}(A) }{ \mathbb{E}[A]^2 } \right).$$
 
 The $\sigma_A^2$ here already incorporates the time dimension, so it represents total log-variance. When calculating $d_1$, the denominator is $\sigma_A$, not $\sigma_A\sqrt{T}$.
-
 #### 3. Pricing Formula
 
 The resulting call option price takes a Black-Scholes-like analytical form:
