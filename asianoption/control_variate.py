@@ -44,6 +44,7 @@ class ControlVariateResult:
     price: float  # CV-adjusted arithmetic Asian price
     std_error: float  # standard error of the CV estimator
     beta: float  # optimal control variate coefficient
+    rho: float
     plain_mc_price: float  # plain MC price (no CV adjustment)
     plain_mc_std: float  # plain MC standard error
     geo_analytical: float  # geometric closed-form price used as E[X]
@@ -175,22 +176,49 @@ def arithmetic_asian_cv(
     E_X = geo_result.price
 
     # ------------------------------------------------------------------
-    # Step 7 -- Optimal beta = Cov(Y, X) / Var(X)
+    # Step 7 -- Correlation check and optimal beta
     #
-    # Computed via dot products on mean-centred vectors.  The 1/(n-1)
-    # normalisation factor cancels in the ratio, so we use unnormalised
-    # quantities directly.  Each dot product maps to a single BLAS call.
+    # In finance, before using a control variate, we first check whether
+    # the candidate control variable X is highly correlated with the target
+    # variable Y.
+    #
+    # Here:
+    #   Y = discounted arithmetic Asian payoff
+    #   X = discounted geometric Asian payoff
+    #
+    # The sample correlation is:
+    #
+    #   rho = Corr(Y, X)
+    #
+    # If |rho| is close to 1, X is a good control variate for Y.
+    #
+    # The optimal control variate coefficient is:
+    #
+    #   beta* = Cov(Y, X) / Var(X)
+    #
+    # Equivalently:
+    #
+    #   beta* = rho * std(Y) / std(X)
+    #
+    # In this implementation, rho is estimated from the same simulated paths.
     # ------------------------------------------------------------------
     mean_Y = np.mean(Y)
     mean_X = np.mean(X)
+
     Y_c = Y - mean_Y
     X_c = X - mean_X
 
-    cov_YX = Y_c @ X_c  # dot product -> single BLAS ddot call
-    var_X = X_c @ X_c  # dot product -> single BLAS ddot call
+    cov_YX = Y_c @ X_c
+    var_Y = Y_c @ Y_c
+    var_X = X_c @ X_c
+
+    if var_Y < 1e-20 or var_X < 1e-20:
+        rho = 0.0
+    else:
+        rho = cov_YX / np.sqrt(var_Y * var_X)
 
     if var_X < 1e-20:
-        beta = 0.0  # degenerate case: geometric payoff has near-zero variance
+        beta = 0.0
     else:
         beta = cov_YX / var_X
 
@@ -217,6 +245,7 @@ def arithmetic_asian_cv(
         price=cv_price,
         std_error=cv_std,
         beta=beta,
+        rho=rho,
         plain_mc_price=plain_price,
         plain_mc_std=plain_std,
         geo_analytical=E_X,
@@ -256,6 +285,7 @@ if __name__ == "__main__":
         print(f"\n  Option type : {opt}")
         print(f"  CV price    : {res.price:.6f}")
         print(f"  CV std err  : {res.std_error:.6f}")
+        print(f"  Rho         : {res.rho:.6f}")
         print(f"  Plain MC    : {res.plain_mc_price:.6f}  (std {res.plain_mc_std:.6f})")
         print(f"  Geo analyt. : {res.geo_analytical:.6f}")
         print(f"  Beta        : {res.beta:.4f}")

@@ -1,3 +1,9 @@
+"""
+
+this script compared the methods of Control Variate MC,Plain MC,Turnbull-Wakeman,Levy
+in terms of computational time and accuracy, in the setting of GBM
+"""
+
 import os
 import time
 import numpy as np
@@ -48,7 +54,7 @@ def compare_one_case(
     rng = np.random.default_rng(seed)
     Z = rng.normal(size=(n_paths, n))
 
-    # ---------------- Plain MC ----------------
+    # Plain MC
     t0 = time.perf_counter()
     mc_price, mc_se = arithmetic_asian_price_mc(
         S0=S0,
@@ -68,7 +74,7 @@ def compare_one_case(
     result["mc_se"] = mc_se
     result["mc_time"] = t1 - t0
 
-    # ---------------- Control Variate MC ----------------
+    # Control Variate MC
     t0 = time.perf_counter()
     cv_res = arithmetic_asian_cv(
         S0=S0,
@@ -97,7 +103,7 @@ def compare_one_case(
     result["mc_cv_plain_diff"] = result["mc_price"] - result["cv_plain_mc_price"]
     result["mc_cv_std_diff"] = result["mc_se"] - result["cv_plain_mc_std"]
 
-    # ---------------- Turnbull-Wakeman ----------------
+    # Turnbull-Wakeman
     t0 = time.perf_counter()
     tw_price = turnbull_wakeman_arithmetic_asian_price(
         S0=S0,
@@ -113,7 +119,7 @@ def compare_one_case(
     result["tw_price"] = tw_price
     result["tw_time"] = t1 - t0
 
-    # ---------------- Levy ----------------
+    #  Levy
     t0 = time.perf_counter()
     levy_price = levy_arithmetic_asian_price(
         S0=S0,
@@ -128,7 +134,7 @@ def compare_one_case(
     result["levy_price"] = levy_price
     result["levy_time"] = t1 - t0
 
-    # ---------------- Deviations from Plain MC ----------------
+    # Deviations from Plain MC
     result["cv_error"] = result["cv_price"] - result["mc_price"]
     result["tw_error"] = result["tw_price"] - result["mc_price"]
     result["levy_error"] = result["levy_price"] - result["mc_price"]

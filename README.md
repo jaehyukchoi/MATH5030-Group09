@@ -252,6 +252,7 @@ where:
 - $V_{\mathrm{geo}}^{\mathrm{closed}}$ is the analytical geometric Asian option price.
 - $\beta$ is the control variate coefficient.
 
+Before applying the control variate adjustment, we first compute the sample correlation between the arithmetic and geometric discounted payoffs. The high correlation confirms that the geometric Asian payoff is an effective control variate.
 The optimal coefficient is
 
 $$\beta^* = \frac{ \mathrm{Cov} \left( V_{\mathrm{arith}}^{\mathrm{MC}}, V_{\mathrm{geo}}^{\mathrm{MC}} \right) }{ \mathrm{Var} \left( V_{\mathrm{geo}}^{\mathrm{MC}} \right) }.$$
@@ -266,10 +267,10 @@ $$S_0 = 100,\quad K = 100,\quad r = 0.05,\quad \sigma = 0.2,\quad T = 1.0,\quad 
 
 the control variate estimator significantly reduces the Monte Carlo standard error.
 
-| Option Type | Plain MC Price | CV Price | Plain MC Std. Error | CV Std. Error | Geometric Asian Closed-Form | Beta |
-|---|---:|---:|---:|---:|---:|---:|
-| Call | $6.179168$ | $6.156463$ | $0.012055$ | $0.000338$ | $5.940200$ | $1.0316$ |
-| Put | $3.523196$ | $3.534525$ | $0.007849$ | $0.000199$ | $3.651734$ | $0.9761$ |
+| Option Type | Plain MC Price | CV Price | Plain MC Std. Error | CV Std. Error | Geometric Asian Closed-Form | Beta | Rho |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Call | $6.179168$ | $6.156463$ | $0.012055$ | $0.000338$ | $5.940200$ | $1.0316$ |$0.999606$
+| Put | $3.523196$ | $3.534525$ | $0.007849$ | $0.000199$ | $3.651734$ | $0.9761$ |$ 0.999679$
 
 The results show that using the geometric Asian option as a control variate reduces the Monte Carlo variance by more than $1000\times$ for both calls and puts in this example.
 

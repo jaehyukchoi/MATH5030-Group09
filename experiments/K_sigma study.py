@@ -1,3 +1,9 @@
+"""
+this script compared the methods of Control Variate MC,Turnbull-Wakeman,Levy
+in terms of different strike price, different sigma, in the setting of GBM
+"""
+
+
 import os
 import time
 import numpy as np
