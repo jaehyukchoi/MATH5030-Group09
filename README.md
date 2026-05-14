@@ -238,7 +238,7 @@ AsianOption/
 │
 ├── asianoption/
 │   ├── __init__.py
-│   │   └── Package exports for the main pricing functions
+│   │   └── Public API exports for pricing, approximation, stochastic-volatility, and TW baseline functions
 │   │
 │   ├── arithmetic_asian_MC.py
 │   │   └── Plain Monte Carlo pricing for arithmetic Asian options under GBM
@@ -270,15 +270,15 @@ AsianOption/
 │
 ├── experiments/
 │   ├── compare_methods.py
-│   │   └── Compare MC, control variate MC, TW, and Levy methods
+│   │   └── Compare plain MC, control variate MC, TW, and Levy methods
 │   │
 │   ├── K_sigma_study.py
 │   │   └── Study pricing deviations across strike and volatility
 │   │
 │   └── greeks_comparison.py
-│       └── Compare finite-difference Greeks against CV Monte Carlo benchmarks
+│       └── Single-case finite-difference Greek comparison against CV Monte Carlo Greeks
 │
-├── model comparison/
+├── model_comparison/
 │   ├── TW_bias_correction.py
 │   │   └── Train and evaluate the GBM TW residual correction model
 │   │
@@ -292,17 +292,31 @@ AsianOption/
 │   │   └── Train Heston and SABR residual correction models
 │   │
 │   └── alternative_method_interpolation.py
-│       └── Additional interpolation and model-comparison experiments
+│       └── Compare polynomial Ridge correction with cubic interpolation correction
+│
+├── tests/
+│   ├── test_imports.py
+│   │   └── Tests public package imports
+│   │
+│   ├── test_gbm_pricing.py
+│   │   └── Tests GBM pricing functions and control variate variance reduction
+│   │
+│   └── test_stochastic_volatility.py
+│       └── Tests Heston, SABR, and effective-volatility helper functions
+│
+├── notebooks/
+│   └── demo_bias_corrected_tw_with_plots_colab_ready.ipynb
+│       └── Colab-ready demo notebook with pricing comparisons, residual correction, stochastic-volatility examples, and Greek diagnostics
 │
 ├── data/
 │   ├── tw_residual_dataset_s0_grid.csv
 │   │   └── GBM residual dataset with multiple spot levels
 │   │
 │   ├── heston_tw_residual_dataset.csv
-│   │   └── Heston effective-vol TW residual dataset
+│   │   └── Heston effective-volatility TW residual dataset
 │   │
 │   ├── sabr_tw_residual_dataset.csv
-│   │   └── SABR effective-vol TW residual dataset
+│   │   └── SABR effective-volatility TW residual dataset
 │   │
 │   ├── bias_correction_summary.csv
 │   │   └── Summary of GBM bias-correction performance
@@ -339,14 +353,22 @@ AsianOption/
 │   └── robustness_mae_reduction_summary.png
 │       └── Robustness summary visualization
 │
-├── demo_bias_corrected_tw_with_plots_colab_ready.ipynb
-│   └── Jupyter notebook demo with pricing comparisons and plots
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       │   └── Run tests automatically on GitHub
+│       │
+│       └── publish.yml
+│           └── Publish package to PyPI when a GitHub Release is created
 │
 ├── pyproject.toml
 │   └── Package metadata, dependencies, and build configuration
 │
 ├── README.md
 │   └── Project documentation
+│
+├── LICENSE
+│   └── MIT license
 │
 └── .gitignore
     └── Files and folders excluded from version control
@@ -886,7 +908,7 @@ data/tw_residual_dataset_s0_grid.csv
 To train the polynomial Ridge residual correction model, run:
 
 ```bash
-python "model comparison/TW_bias_correction.py"
+python "model_comparison/TW_bias_correction.py"
 ```
 
 This script trains the model on the scaled residual and evaluates the corrected Turnbull-Wakeman price:
@@ -900,7 +922,7 @@ data/tw_bias_correction_random_test_results.csv
 data/bias_correction_summary.csv
 ```
 
-If you rename the folder `model comparison` to `model_comparison`, use:
+If you rename the folder `model_comparison` to `model_comparison`, use:
 
 ```bash
 python model_comparison/TW_bias_correction.py
@@ -913,7 +935,7 @@ python model_comparison/TW_bias_correction.py
 To reproduce the robustness tests, run:
 
 ```bash
-python "model comparison/robustness_check_for_TW_bias_correction.py"
+python "model_comparison/robustness_check_for_TW_bias_correction.py"
 ```
 
 This script runs tests such as:
@@ -968,7 +990,7 @@ figures/robustness_mae_reduction_summary.png
 To reproduce the cubic interpolation comparison, run:
 
 ```bash
-python "model comparison/alternative_method_interpolation.py"
+python "model_comparison/alternative_method_interpolation.py"
 ```
 
 This script compares:
@@ -1062,7 +1084,7 @@ data/sabr_tw_residual_dataset.csv
 Then train and evaluate the stochastic-volatility correction models:
 
 ```bash
-python "model comparison/stochastic_bias_correction.py"
+python "model_comparison/stochastic_bias_correction.py"
 ```
 
 This creates:
@@ -1198,7 +1220,7 @@ reports/greeks_comparison_results.csv
 To run the full Greek robustness check across the parameter grid:
 
 ```bash
-python "model comparison/robustness_check_for_greeks.py"
+python "model_comparison/robustness_check_for_greeks.py"
 ```
 
 This generates:
