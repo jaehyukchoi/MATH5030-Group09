@@ -1286,7 +1286,7 @@ reports/greeks_comparison_results.csv
 To run the full Greek robustness check across the parameter grid:
 
 ```bash
-python "model_comparison/robustness_check_for_greeks.py"
+python model_comparison/robustness_check_for_greeks.py
 ```
 
 This generates:
@@ -1299,13 +1299,6 @@ reports/greeks_robustness_by_sigma.csv
 reports/greeks_robustness_by_T.csv
 reports/greeks_robustness_by_n.csv
 ```
-
-If the folder is renamed to `model_comparison`, run:
-
-```bash
-python model_comparison/robustness_check_for_greeks.py
-```
-
 ---
 
 ### Notes
