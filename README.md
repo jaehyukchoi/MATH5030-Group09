@@ -1387,6 +1387,325 @@ An interactive demo showed the different methods and plot is available here:
 
 ---
 
+
+## API Reference
+
+### `arithmetic_asian_price_mc(S0, K, r, T, sigma, n, n_paths=100000, seed=42, option_type="call", Z=None, averaging_start=0.0, averaging_end=None)`
+
+Plain Monte Carlo pricing for arithmetic Asian options under GBM.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Continuously compounded risk-free rate |
+| `T` | `float` | Time to maturity |
+| `sigma` | `float` | Constant volatility under GBM |
+| `n` | `int` | Number of monitoring dates |
+| `n_paths` | `int` | Number of Monte Carlo paths. Default: `100000` |
+| `seed` | `int` | Random seed. Default: `42` |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `Z` | `(n_paths, n)` array or `None` | Optional fixed random shock matrix |
+| `averaging_start` | `float` | Start time of averaging window. Default: `0.0` |
+| `averaging_end` | `float` or `None` | End time of averaging window. If `None`, defaults to `T` |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `price` | `float` | Plain Monte Carlo arithmetic Asian option price |
+| `std_error` | `float` | Monte Carlo standard error |
+
+---
+
+### `arithmetic_asian_cv(S0, K, r, T, sigma, n, n_paths=100_000, seed=42, option_type="call", Z=None, averaging_start=0.0, averaging_end=None)`
+
+Control variate Monte Carlo pricing for arithmetic Asian options.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Continuously compounded risk-free rate |
+| `T` | `float` | Time to maturity |
+| `sigma` | `float` | Constant volatility under GBM |
+| `n` | `int` | Number of monitoring dates |
+| `n_paths` | `int` | Number of Monte Carlo paths. Default: `100000` |
+| `seed` | `int` | Random seed. Default: `42` |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `Z` | `(n_paths, n)` array or `None` | Optional fixed random shock matrix |
+| `averaging_start` | `float` | Start time of averaging window. Default: `0.0` |
+| `averaging_end` | `float` or `None` | End time of averaging window. If `None`, defaults to `T` |
+
+Returns a `ControlVariateResult` dataclass:
+
+| Field | Type | Description |
+|---|---|---|
+| `price` | `float` | Control-variate adjusted arithmetic Asian price |
+| `std_error` | `float` | Standard error of the control variate estimator |
+| `beta` | `float` | Estimated optimal control variate coefficient |
+| `rho` | `float` | Sample correlation between arithmetic and geometric discounted payoffs |
+| `plain_mc_price` | `float` | Plain Monte Carlo price on the same simulated paths |
+| `plain_mc_std` | `float` | Plain Monte Carlo standard error |
+| `geo_analytical` | `float` | Closed-form geometric Asian price used as the control expectation |
+| `variance_reduction` | `float` | Variance reduction ratio relative to plain Monte Carlo |
+
+---
+
+### `geometric_asian_price_analytical(S0, K, r, sigma, T, n, option_type="call", averaging_start=0.0, averaging_end=None)`
+
+Closed-form pricing for geometric Asian options under GBM.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Continuously compounded risk-free rate |
+| `sigma` | `float` | Constant volatility under GBM |
+| `T` | `float` | Time to maturity |
+| `n` | `int` | Number of monitoring dates |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `averaging_start` | `float` | Start time of averaging window. Default: `0.0` |
+| `averaging_end` | `float` or `None` | End time of averaging window. If `None`, defaults to `T` |
+
+Returns a `GeometricAsianResult` dataclass:
+
+| Field | Type | Description |
+|---|---|---|
+| `price` | `float` | Geometric Asian option price |
+| `d1` | `float` | Black-Scholes-style `d1` |
+| `d2` | `float` | Black-Scholes-style `d2` |
+| `adjusted_spot` | `float` | Lognormal adjusted mean of the geometric average |
+| `sigma_g` | `float` | Effective geometric volatility |
+| `mu_g` | `float` | Effective geometric drift parameter |
+
+---
+
+### `geometric_asian_price_mc(S0, K, r, sigma, T, n, n_paths=100000, seed=42, option_type="call", Z=None, averaging_start=0.0, averaging_end=None)`
+
+Monte Carlo pricing for geometric Asian options under GBM.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Continuously compounded risk-free rate |
+| `sigma` | `float` | Constant volatility under GBM |
+| `T` | `float` | Time to maturity |
+| `n` | `int` | Number of monitoring dates |
+| `n_paths` | `int` | Number of Monte Carlo paths. Default: `100000` |
+| `seed` | `int` | Random seed. Default: `42` |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `Z` | `(n_paths, n)` array or `None` | Optional fixed random shock matrix |
+| `averaging_start` | `float` | Start time of averaging window. Default: `0.0` |
+| `averaging_end` | `float` or `None` | End time of averaging window. If `None`, defaults to `T` |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `price` | `float` | Geometric Asian Monte Carlo price |
+| `std_error` | `float` | Monte Carlo standard error |
+
+---
+
+### `turnbull_wakeman_arithmetic_asian_price(S0, K, r, sigma, T, n, option_type="call", averaging_start=0.0, averaging_end=None)`
+
+Turnbull-Wakeman moment-matching approximation for arithmetic Asian options under GBM.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Continuously compounded risk-free rate |
+| `sigma` | `float` | Constant volatility under GBM |
+| `T` | `float` | Time to maturity |
+| `n` | `int` | Number of monitoring dates |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `averaging_start` | `float` | Start time of averaging window. Default: `0.0` |
+| `averaging_end` | `float` or `None` | End time of averaging window. If `None`, defaults to `T` |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `price` | `float` | Turnbull-Wakeman arithmetic Asian option price |
+
+---
+
+### `levy_arithmetic_asian_price(S0, K, r, sigma, T, option_type="call")`
+
+Levy-style lognormal approximation for continuously monitored arithmetic Asian options.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Continuously compounded risk-free rate |
+| `sigma` | `float` | Constant volatility under GBM |
+| `T` | `float` | Time to maturity |
+| `option_type` | `str` | `"call"` or `"put"` |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `price` | `float` | Levy approximation price |
+
+---
+
+### `arithmetic_asian_heston_mc(S0, K, r, T, v0, kappa, theta, xi, rho, n, n_paths=100000, seed=42, option_type="call", full_truncation=True)`
+
+Monte Carlo pricing for arithmetic Asian options under the Heston stochastic volatility model.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Risk-free rate |
+| `T` | `float` | Time to maturity |
+| `v0` | `float` | Initial variance |
+| `kappa` | `float` | Mean-reversion speed of variance |
+| `theta` | `float` | Long-run variance level |
+| `xi` | `float` | Volatility of variance |
+| `rho` | `float` | Correlation between stock and variance Brownian shocks |
+| `n` | `int` | Number of monitoring dates |
+| `n_paths` | `int` | Number of Monte Carlo paths. Default: `100000` |
+| `seed` | `int` | Random seed. Default: `42` |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `full_truncation` | `bool` | If `True`, uses full truncation Euler to keep variance non-negative |
+
+Returns a `HestonAsianMCResult` dataclass:
+
+| Field | Type | Description |
+|---|---|---|
+| `price` | `float` | Heston Asian Monte Carlo price |
+| `std_error` | `float` | Monte Carlo standard error |
+| `terminal_mean` | `float` | Mean terminal underlying level |
+| `average_mean` | `float` | Mean arithmetic average |
+| `variance_mean` | `float` | Mean terminal variance |
+
+---
+
+### `arithmetic_asian_sabr_mc(F0, K, r, T, alpha0, beta, nu, rho, n, n_paths=100000, seed=42, option_type="call", log_euler=True)`
+
+Monte Carlo pricing for arithmetic Asian options under the SABR-style stochastic volatility model.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `F0` | `float` | Initial forward or underlying level |
+| `K` | `float` | Strike price |
+| `r` | `float` | Risk-free rate used for discounting |
+| `T` | `float` | Time to maturity |
+| `alpha0` | `float` | Initial stochastic volatility level |
+| `beta` | `float` | SABR elasticity parameter |
+| `nu` | `float` | Volatility of volatility |
+| `rho` | `float` | Correlation between price and volatility Brownian shocks |
+| `n` | `int` | Number of monitoring dates |
+| `n_paths` | `int` | Number of Monte Carlo paths. Default: `100000` |
+| `seed` | `int` | Random seed. Default: `42` |
+| `option_type` | `str` | `"call"` or `"put"` |
+| `log_euler` | `bool` | If `True`, uses a log-Euler style update to preserve positivity |
+
+Returns a `SABRAsianMCResult` dataclass:
+
+| Field | Type | Description |
+|---|---|---|
+| `price` | `float` | SABR Asian Monte Carlo price |
+| `std_error` | `float` | Monte Carlo standard error |
+| `terminal_mean` | `float` | Mean terminal underlying or forward level |
+| `average_mean` | `float` | Mean arithmetic average |
+| `alpha_terminal_mean` | `float` | Mean terminal stochastic volatility level |
+
+---
+
+### `heston_effective_vol(v0, kappa, theta, T)`
+
+Computes the effective volatility used in the Heston effective-volatility Turnbull-Wakeman baseline.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `v0` | `float` | Initial variance |
+| `kappa` | `float` | Mean-reversion speed |
+| `theta` | `float` | Long-run variance level |
+| `T` | `float` | Time horizon |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `sigma_eff` | `float` | Effective volatility based on expected average Heston variance |
+
+---
+
+### `sabr_effective_vol(S0, alpha0, beta)`
+
+Computes the first-order effective local log-volatility used in the SABR effective-volatility Turnbull-Wakeman baseline.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying level |
+| `alpha0` | `float` | Initial stochastic volatility level |
+| `beta` | `float` | SABR elasticity parameter |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `sigma_eff` | `float` | Initial SABR local log-volatility approximation |
+
+---
+
+### `turnbull_wakeman_heston_effective_vol_price(S0, K, r, T, v0, kappa, theta, xi, rho, n, option_type="call")`
+
+Effective-volatility Turnbull-Wakeman baseline for Heston Asian options.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying price |
+| `K` | `float` | Strike price |
+| `r` | `float` | Risk-free rate |
+| `T` | `float` | Time to maturity |
+| `v0` | `float` | Initial variance |
+| `kappa` | `float` | Mean-reversion speed |
+| `theta` | `float` | Long-run variance level |
+| `xi` | `float` | Volatility of variance. Included for interface consistency |
+| `rho` | `float` | Correlation parameter. Included for interface consistency |
+| `n` | `int` | Number of monitoring dates |
+| `option_type` | `str` | `"call"` or `"put"` |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `price` | `float` | Heston effective-volatility TW baseline price |
+
+---
+
+### `turnbull_wakeman_sabr_effective_vol_price(S0, K, r, T, alpha0, beta, nu, rho, n, option_type="call")`
+
+Effective-volatility Turnbull-Wakeman baseline for SABR Asian options.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `S0` | `float` | Initial underlying level |
+| `K` | `float` | Strike price |
+| `r` | `float` | Risk-free rate |
+| `T` | `float` | Time to maturity |
+| `alpha0` | `float` | Initial SABR stochastic volatility level |
+| `beta` | `float` | SABR elasticity parameter |
+| `nu` | `float` | Volatility of volatility. Included for interface consistency |
+| `rho` | `float` | Correlation parameter. Included for interface consistency |
+| `n` | `int` | Number of monitoring dates |
+| `option_type` | `str` | `"call"` or `"put"` |
+
+Returns:
+
+| Output | Type | Description |
+|---|---|---|
+| `price` | `float` | SABR effective-volatility TW baseline price |
+
+
 ## References
 
 This project is related to the classical Asian option pricing literature and numerical approximation methods:
