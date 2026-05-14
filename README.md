@@ -26,6 +26,15 @@ import asianoption
 
 ### Constant-Volatility GBM Asian Option Pricing
 
+The package supports pricing arithmetic Asian options under the constant-volatility GBM setting using:
+
+- Turnbull-Wakeman approximation
+- Plain Monte Carlo
+- Control variate Monte Carlo
+
+By default, the averaging window is the standard academic setting \([0,T]\).  
+The same functions also support a flexible averaging window \([T_1,T_2]\) through the optional arguments `averaging_start` and `averaging_end`.
+
 ```python
 from asianoption import (
     turnbull_wakeman_arithmetic_asian_price,
@@ -40,6 +49,9 @@ sigma = 0.2
 T = 1.0
 n = 12
 
+# ------------------------------------------------------------
+# Standard Asian option: averaging over [0, T]
+# ------------------------------------------------------------
 tw_price = turnbull_wakeman_arithmetic_asian_price(
     S0=S0,
     K=K,
@@ -74,14 +86,68 @@ cv_result = arithmetic_asian_cv(
     option_type="call",
 )
 
+print("Standard averaging over [0, T]")
 print("Turnbull-Wakeman price:", tw_price)
 print("Plain MC price:", mc_price)
 print("Plain MC standard error:", mc_se)
 print("Control Variate MC price:", cv_result.price)
 print("Control Variate MC standard error:", cv_result.std_error)
 print("Variance reduction:", cv_result.variance_reduction)
-```
 
+
+# ------------------------------------------------------------
+# Delayed-start Asian option: averaging over [T1, T2]
+# ------------------------------------------------------------
+averaging_start = 0.5
+averaging_end = 1.0
+
+tw_delayed = turnbull_wakeman_arithmetic_asian_price(
+    S0=S0,
+    K=K,
+    r=r,
+    sigma=sigma,
+    T=T,
+    n=n,
+    option_type="call",
+    averaging_start=averaging_start,
+    averaging_end=averaging_end,
+)
+
+mc_delayed, mc_delayed_se = arithmetic_asian_price_mc(
+    S0=S0,
+    K=K,
+    r=r,
+    T=T,
+    sigma=sigma,
+    n=n,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+    averaging_start=averaging_start,
+    averaging_end=averaging_end,
+)
+
+cv_delayed = arithmetic_asian_cv(
+    S0=S0,
+    K=K,
+    r=r,
+    T=T,
+    sigma=sigma,
+    n=n,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+    averaging_start=averaging_start,
+    averaging_end=averaging_end,
+)
+
+print("\nDelayed averaging over [0.5, 1.0]")
+print("Delayed Turnbull-Wakeman price:", tw_delayed)
+print("Delayed Plain MC price:", mc_delayed)
+print("Delayed Plain MC standard error:", mc_delayed_se)
+print("Delayed Control Variate MC price:", cv_delayed.price)
+print("Delayed Control Variate MC standard error:", cv_delayed.std_error)
+```
 ---
 
 ### Stochastic Volatility Examples

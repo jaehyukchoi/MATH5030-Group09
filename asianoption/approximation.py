@@ -1,8 +1,18 @@
 import numpy as np
-from .utils import norm_cdf
+from .utils import norm_cdf, make_fixing_times
 
 
-def turnbull_wakeman_arithmetic_asian_price(S0, K, r, sigma, T, n, option_type="call"):
+def turnbull_wakeman_arithmetic_asian_price(
+    S0,
+    K,
+    r,
+    sigma,
+    T,
+    n,
+    option_type="call",
+    averaging_start=0.0,
+    averaging_end=None,
+):
     if S0 <= 0:
         raise ValueError("S0 must be positive.")
     if K <= 0:
@@ -17,8 +27,13 @@ def turnbull_wakeman_arithmetic_asian_price(S0, K, r, sigma, T, n, option_type="
         raise ValueError("option_type must be 'call' or 'put'.")
 
     sigma_sq = sigma * sigma  # single mul, avoids pow()
-    dt = T / n
-    t = np.arange(1, n + 1) * dt  # fixing dates t_i = i*T/n, i = 1,...,n
+
+    t = make_fixing_times(
+        T=T,
+        n=n,
+        averaging_start=averaging_start,
+        averaging_end=averaging_end,
+    )
 
     # Pre-compute exp(r*t_i) vector — reused in both M1 and M2
     exp_rt = np.exp(r * t)  # one vectorized exp of length n

@@ -32,6 +32,7 @@ Reference:
 import numpy as np
 from dataclasses import dataclass
 from .geometric_asian import geometric_asian_price_analytical
+from .utils import make_fixing_times
 
 
 # ---------------------------------------------------------------------------
@@ -55,7 +56,18 @@ class ControlVariateResult:
 # Main pricing function
 # ---------------------------------------------------------------------------
 def arithmetic_asian_cv(
-    S0, K, r, T, sigma, n, n_paths=100_000, seed=42, option_type="call", Z=None
+    S0,
+    K,
+    r,
+    T,
+    sigma,
+    n,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+    Z=None,
+    averaging_start=0.0,
+    averaging_end=None,
 ):
     """
     Price an arithmetic Asian option using Monte Carlo with a geometric
@@ -74,13 +86,17 @@ def arithmetic_asian_cv(
     sigma : float
         Volatility of the underlying (annualized).
     n : int
-        Number of monitoring dates (equally spaced over [0, T]).
+        Number of monitoring dates.
     n_paths : int, optional
         Number of Monte Carlo paths (default 100,000).
     seed : int, optional
         Random seed for reproducibility (default 42).
     option_type : str, optional
         'call' or 'put' (default 'call').
+    averaging_start : float, optional
+        Start time of the averaging window. Default is 0.0.
+    averaging_end : float or None, optional
+        End time of the averaging window. If None, defaults to T.
 
     Returns
     -------
@@ -93,7 +109,16 @@ def arithmetic_asian_cv(
     # ------------------------------------------------------------------
     # Pre-compute scalar constants (evaluated once, reused across all paths)
     # ------------------------------------------------------------------
-    dt = T / n
+    fixing_times = make_fixing_times(
+        T=T,
+        n=n,
+        averaging_start=averaging_start,
+        averaging_end=averaging_end,
+    )
+
+    all_times = np.concatenate([[0.0], fixing_times])
+    dt = np.diff(all_times)
+
     drift = (r - 0.5 * sigma * sigma) * dt  # sigma*sigma: single mul, avoids pow()
     vol_sqrt_dt = sigma * np.sqrt(dt)  # one sqrt; reused for every path & step
     discount = np.exp(-r * T)  # one exp; applied to all payoffs below
@@ -111,7 +136,10 @@ def arithmetic_asian_cv(
     else:
         n_paths = Z.shape[0]  # infer from provided Z to keep std_error correct
 
-    log_inc = drift + vol_sqrt_dt * Z  # shape (n_paths, n)
+    if Z.shape[1] != n:
+        raise ValueError("Z must have shape (n_paths, n).")
+
+    log_inc = drift[None, :] + vol_sqrt_dt[None, :] * Z  # shape (n_paths, n)
 
     # ------------------------------------------------------------------
     # Step 2 -- Cumulative log-returns (addition only, no transcendentals)
@@ -165,13 +193,15 @@ def arithmetic_asian_cv(
     # Step 6 -- Known geometric price from the closed-form formula
     # ------------------------------------------------------------------
     geo_result = geometric_asian_price_analytical(
-        S0,
-        K,
-        r,
-        sigma,
-        T,
-        n,
+        S0=S0,
+        K=K,
+        r=r,
+        sigma=sigma,
+        T=T,
+        n=n,
         option_type=option_type,
+        averaging_start=averaging_start,
+        averaging_end=averaging_end,
     )
     E_X = geo_result.price
 
@@ -290,5 +320,25 @@ if __name__ == "__main__":
         print(f"  Geo analyt. : {res.geo_analytical:.6f}")
         print(f"  Beta        : {res.beta:.4f}")
         print(f"  Var reduction: {res.variance_reduction:.1f}x")
+
+    print("\nDelayed averaging window [0.5, 1.0]")
+
+    res_delayed = arithmetic_asian_cv(
+        S0,
+        K,
+        r,
+        T,
+        sigma,
+        n,
+        n_paths=500_000,
+        option_type="call",
+        averaging_start=0.5,
+        averaging_end=1.0,
+    )
+
+    print(f"  CV delayed price : {res_delayed.price:.6f}")
+    print(f"  CV delayed stderr: {res_delayed.std_error:.6f}")
+    print(f"  Rho              : {res_delayed.rho:.6f}")
+    print(f"  Beta             : {res_delayed.beta:.4f}")
 
     print("\n" + "=" * 65)

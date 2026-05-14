@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "asianoption"
-version = "0.2.0"
+version = "0.2.1"
 description = "Asian option pricing methods including Monte Carlo, control variates, analytical approximations, and stochastic volatility extensions."
 readme = "README.md"
 requires-python = ">=3.9"

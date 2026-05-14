@@ -2,9 +2,8 @@ import numpy as np
 from .utils import (
     norm_cdf,
     GeometricAsianResult,
-    simulate_gbm_paths,
-    geometric_average_mc,
     discounted,
+    make_fixing_times,
 )
 
 
@@ -16,6 +15,8 @@ def geometric_asian_price_analytical(
     T,
     n,
     option_type="call",
+    averaging_start=0.0,
+    averaging_end=None,
 ):
     if S0 <= 0:
         raise ValueError("S0 must be positive.")
@@ -30,18 +31,35 @@ def geometric_asian_price_analytical(
     if option_type not in {"call", "put"}:
         raise ValueError("option_type must be 'call' or 'put'.")
 
-    # Geometric average over n fixing dates (excluding S0):
-    # G = (prod_{i=1}^n S_{t_i})^(1/n),  t_i = iT/n
+    # Geometric average over n fixing dates:
+    #
+    # Standard case:
+    #   t_i = iT/n
+    #
+    # Flexible averaging window:
+    #   t_i = T1 + i(T2 - T1)/n
+    #
+    # G = (prod_{i=1}^n S_{t_i})^(1/n)
 
     sigma_sq = sigma * sigma  # single mul, avoids pow()
 
+    fixing_times = make_fixing_times(
+        T=T,
+        n=n,
+        averaging_start=averaging_start,
+        averaging_end=averaging_end,
+    )
+
+    mean_t = np.mean(fixing_times)
+    min_matrix = np.minimum.outer(fixing_times, fixing_times)
+
     # mean and variance of ln G
-    mu_lnG = np.log(S0) + (r - 0.5 * sigma_sq) * T * (n + 1.0) / (2.0 * n)
-    var_lnG = sigma_sq * T * (n + 1.0) * (2.0 * n + 1.0) / (6.0 * n * n)
+    mu_lnG = np.log(S0) + (r - 0.5 * sigma_sq) * mean_t
+    var_lnG = sigma_sq * np.sum(min_matrix) / (n * n)
 
     sigma_g = np.sqrt(var_lnG / T)
     mu_g = mu_lnG / T
-    adjusted_spot = np.exp(mu_lnG + 0.5 * var_lnG)  # computed once, reused below
+    adjusted_spot = np.exp(mu_lnG + 0.5 * var_lnG)
 
     vol_term = np.sqrt(var_lnG)
 
@@ -60,15 +78,13 @@ def geometric_asian_price_analytical(
             mu_g=float(mu_g),
         )
 
-    log_K = np.log(K)  # one log; reused in d1
+    log_K = np.log(K)
     d1 = (mu_lnG - log_K + var_lnG) / vol_term
     d2 = d1 - vol_term
 
     discount = np.exp(-r * T)
 
-    # reuse adjusted_spot = exp(mu_lnG + 0.5*var_lnG) instead of recomputing
     call_price = discount * (adjusted_spot * norm_cdf(d1) - K * norm_cdf(d2))
-
     put_price = discount * (K * norm_cdf(-d2) - adjusted_spot * norm_cdf(-d1))
 
     price = call_price if option_type == "call" else put_price
@@ -84,15 +100,49 @@ def geometric_asian_price_analytical(
 
 
 def geometric_asian_price_mc(
-    S0, K, r, sigma, T, n, n_paths=100000, seed=42, option_type="call"
+    S0,
+    K,
+    r,
+    sigma,
+    T,
+    n,
+    n_paths=100000,
+    seed=42,
+    option_type="call",
+    Z=None,
+    averaging_start=0.0,
+    averaging_end=None,
 ):
     if option_type not in {"call", "put"}:
-        raise ValueError("optional_type must be 'call' or 'put'.")
+        raise ValueError("option_type must be 'call' or 'put'.")
 
-    S_path = simulate_gbm_paths(
-        S0=S0, r=r, sigma=sigma, n=n, n_paths=n_paths, seed=seed, T=T
+    fixing_times = make_fixing_times(
+        T=T,
+        n=n,
+        averaging_start=averaging_start,
+        averaging_end=averaging_end,
     )
-    G = geometric_average_mc(S_path)
+
+    all_times = np.concatenate([[0.0], fixing_times])
+    dt = np.diff(all_times)
+
+    if Z is None:
+        rng = np.random.default_rng(seed)
+        Z = rng.normal(size=(n_paths, n))
+    else:
+        n_paths = Z.shape[0]
+
+    if Z.shape[1] != n:
+        raise ValueError("Z must have shape (n_paths, n).")
+
+    drift_vec = (r - 0.5 * sigma * sigma) * dt
+    vol_vec = sigma * np.sqrt(dt)
+
+    log_inc = drift_vec[None, :] + vol_vec[None, :] * Z
+    cum_log_ret = np.cumsum(log_inc, axis=1)
+
+    log_G = np.log(S0) + np.mean(cum_log_ret, axis=1)
+    G = np.exp(log_G)
 
     if option_type == "call":
         payoff = np.maximum(G - K, 0.0)
@@ -119,6 +169,19 @@ if __name__ == "__main__":
         S0, K, r, sigma, T, n, option_type="call"
     )
 
+    delayed_res = geometric_asian_price_analytical(
+        S0,
+        K,
+        r,
+        sigma,
+        T,
+        n,
+        option_type="call",
+        averaging_start=0.5,
+        averaging_end=1.0,
+    )
+
     print("Analytical price:", res.price)
     print("MC price        :", mc_price)
     print("MC std error    :", mc_std)
+    print("Delayed analytical price:", delayed_res.price)

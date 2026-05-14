@@ -58,3 +58,33 @@ def geometric_average_mc(S_path):
 
 def discounted(X, r, T):
     return np.exp(-r * T) * X
+
+
+
+
+def make_fixing_times(T, n, averaging_start=0.0, averaging_end=None):
+    """
+    Generate Asian option fixing times.
+
+    Default is the standard setting:
+        [0, T]
+
+    More generally, averaging is done over:
+        [averaging_start, averaging_end]
+    """
+    if averaging_end is None:
+        averaging_end = T
+
+    if T <= 0:
+        raise ValueError("T must be positive.")
+    if n <= 0:
+        raise ValueError("n must be positive.")
+    if averaging_start < 0:
+        raise ValueError("averaging_start must be non-negative.")
+    if averaging_end <= averaging_start:
+        raise ValueError("averaging_end must be greater than averaging_start.")
+    if averaging_end > T:
+        raise ValueError("averaging_end cannot be greater than T.")
+
+    dt = (averaging_end - averaging_start) / n
+    return averaging_start + dt * np.arange(1, n + 1)
