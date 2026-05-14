@@ -974,7 +974,7 @@ data/tw_residual_dataset_s0_grid.csv
 To train the polynomial Ridge residual correction model, run:
 
 ```bash
-python "model_comparison/TW_bias_correction.py"
+python model_comparison/TW_bias_correction.py
 ```
 
 This script trains the model on the scaled residual and evaluates the corrected Turnbull-Wakeman price:
@@ -988,11 +988,6 @@ data/tw_bias_correction_random_test_results.csv
 data/bias_correction_summary.csv
 ```
 
-If you rename the folder `model_comparison` to `model_comparison`, use:
-
-```bash
-python model_comparison/TW_bias_correction.py
-```
 
 ---
 
@@ -1001,7 +996,7 @@ python model_comparison/TW_bias_correction.py
 To reproduce the robustness tests, run:
 
 ```bash
-python "model_comparison/robustness_check_for_TW_bias_correction.py"
+python model_comparison/robustness_check_for_TW_bias_correction.py
 ```
 
 This script runs tests such as:
@@ -1020,13 +1015,6 @@ Typical outputs include:
 data/bias_correction_robustness_summary.csv
 reports/*_prediction_results.csv
 ```
-
-If the folder is renamed to `model_comparison`, use:
-
-```bash
-python model_comparison/robustness_check_for_TW_bias_correction.py
-```
-
 ---
 
 ### 4. Generate Robustness Figures
@@ -1056,7 +1044,7 @@ figures/robustness_mae_reduction_summary.png
 To reproduce the cubic interpolation comparison, run:
 
 ```bash
-python "model_comparison/alternative_method_interpolation.py"
+python model_comparison/alternative_method_interpolation.py
 ```
 
 This script compares:
@@ -1067,11 +1055,6 @@ This script compares:
 
 It evaluates the methods on an off-grid test set inside the calibrated parameter domain.
 
-If the folder is renamed to `model_comparison`, use:
-
-```bash
-python model_comparison/alternative_method_interpolation.py
-```
 
 ---
 
@@ -1150,7 +1133,7 @@ data/sabr_tw_residual_dataset.csv
 Then train and evaluate the stochastic-volatility correction models:
 
 ```bash
-python "model_comparison/stochastic_bias_correction.py"
+python model_comparison/stochastic_bias_correction.py
 ```
 
 This creates:
@@ -1161,11 +1144,7 @@ reports/sabr_stochastic_correction_test_results.csv
 reports/stochastic_bias_correction_summary.csv
 ```
 
-If the folder is renamed to `model_comparison`, run:
 
-```bash
-python model_comparison/stochastic_bias_correction.py
-```
 ## 7.Greek Robustness Check
 
 This project also evaluates whether the bias-corrected Turnbull-Wakeman approximation improves finite-difference Greeks under the constant-volatility GBM setting.
