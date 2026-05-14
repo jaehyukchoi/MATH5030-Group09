@@ -879,25 +879,6 @@ This script generates:
 ```text
 data/tw_residual_dataset_s0_grid.csv
 ```
-
-The dataset contains option parameters, control variate Monte Carlo benchmark prices, Turnbull-Wakeman prices, raw residuals, scaled residuals, and engineered features.
-
-The residual is defined as:
-
-$$
-\varepsilon_{\mathrm{TW}}
-=
-C_{\mathrm{TW}} - V_{\mathrm{CV}}.
-$$
-
-The scaled residual target is:
-
-$$
-y
-=
-\frac{C_{\mathrm{TW}} - V_{\mathrm{CV}}}{S_0}.
-$$
-
 ---
 
 ### 2. Train the Polynomial Ridge Bias-Correction Model
@@ -910,11 +891,7 @@ python "model comparison/TW_bias_correction.py"
 
 This script trains the model on the scaled residual and evaluates the corrected Turnbull-Wakeman price:
 
-$$
-C_{\mathrm{corrected}}
-=
-C_{\mathrm{TW}} - S_0\widehat{y}.
-$$
+
 
 Typical outputs include:
 
@@ -1041,25 +1018,19 @@ The idea is to first approximate the stochastic-volatility model with an effecti
 For Heston:
 
 $$
-\varepsilon_{\mathrm{Heston}}
-=
-C_{\mathrm{TW,Heston}} - V_{\mathrm{HestonMC}}.
+\varepsilon_{\mathrm{Heston}} = C_{\mathrm{TW,Heston}} - V_{\mathrm{HestonMC}}.
 $$
 
 For SABR:
 
 $$
-\varepsilon_{\mathrm{SABR}}
-=
-C_{\mathrm{TW,SABR}} - V_{\mathrm{SABRMC}}.
+\varepsilon_{\mathrm{SABR}} = C_{\mathrm{TW,SABR}} - V_{\mathrm{SABRMC}}.
 $$
 
 The corrected price is computed as:
 
 $$
-C_{\mathrm{corrected}}
-=
-C_{\mathrm{TW}} - S_0\widehat{y}.
+C_{\mathrm{corrected}} = C_{\mathrm{TW}} - S_0\widehat{y}.
 $$
 
 ### Stochastic Volatility Results
@@ -1169,11 +1140,8 @@ The three pricing methods compared are:
 The corrected price is:
 
 $$
-C_{\mathrm{corrected}}
-=
-C_{\mathrm{TW}} - S_0\widehat{y}.
+C_{\mathrm{corrected}} = C_{\mathrm{TW}} - S_0\widehat{y}.
 $$
-
 ---
 
 ### Greek Robustness Results
