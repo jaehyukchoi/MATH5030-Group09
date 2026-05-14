@@ -1252,27 +1252,66 @@ python model_comparison/robustness_check_for_greeks.py
 
 ## 7. Conclusion
 
-The proposed Turnbull-Wakeman bias-correction framework is robust across most tested regimes. The correction reduces pricing MAE by approximately 81% to 91% in the main robustness tests, including random train-test split, high-volatility holdout, long-maturity holdout, high-monitoring-frequency holdout, leave-one-$S_0$-out, and checkerboard interpolation.
+This project shows that the Turnbull-Wakeman approximation error is not random. Instead, the error has a stable and learnable structure across option parameters such as moneyness, volatility, maturity, and monitoring frequency.
 
-The strongest evidence comes from the leave-one-$S_0$-out tests, where the MAE reduction remains around 87% across all held-out spot levels. This confirms that modeling the scaled residual is effective for generalizing across spot levels.
+Under the constant-volatility GBM setting, the bias-corrected Turnbull-Wakeman framework performs strongly across most tested regimes. In the main robustness tests, the correction reduces pricing MAE by approximately 81% to 91%, including random train-test split, high-volatility holdout, long-maturity holdout, high-monitoring-frequency holdout, leave-one-$S_0$-out, and checkerboard interpolation.
 
-The main limitation is boundary moneyness extrapolation. When the extreme moneyness levels $0.7$ and $1.3$ are entirely excluded from training, performance drops significantly. In contrast, interior moneyness levels from $0.8$ to $1.2$ show strong interpolation performance.
+The strongest evidence comes from the leave-one-$S_0$-out tests, where the MAE reduction remains around 87% across all held-out spot levels. This supports the design choice of learning the scaled residual,
 
-Overall, the results suggest that the residual-learning correction captures a stable and systematic structure in the Turnbull-Wakeman approximation error.
+$$
+\frac{C_{\mathrm{TW}} - C_{\mathrm{CV}}}{S_0},
+$$
+
+which improves generalization across different spot levels.
+
+The framework also extends naturally to stochastic volatility models. By using effective-volatility Turnbull-Wakeman baselines, separate residual correction models are trained for Heston and SABR. The Heston correction reduces MAE by about 50%, while the SABR correction reduces RMSE by more than 60%. This suggests that residual learning remains useful even when the underlying volatility process is more complex than constant-volatility GBM.
+
+The Greek diagnostics further show that the correction improves not only price levels but also local sensitivities. Across a 90-case grid, the correction reduces Delta MAE by approximately 56%, Vega MAE by approximately 75%, and $\Theta_T$ MAE by approximately 67%. Rho remains unchanged because the residual model does not include the interest rate $r$ as a feature.
+
+The cubic interpolation experiment provides another useful comparison. Inside the calibrated parameter grid, cubic interpolation achieves very strong average accuracy, reducing off-grid MAE by more than 95%. However, polynomial Ridge correction provides better worst-case error control, suggesting a trade-off between average interpolation accuracy and robustness.
+
+The main limitation is boundary extrapolation. When extreme moneyness levels such as 0.7 and 1.3 are entirely excluded from training, performance drops significantly. In contrast, interior moneyness levels from 0.8 to 1.2 show strong interpolation performance. Therefore, the current framework should be viewed primarily as a strong interpolation-based correction method within a calibrated parameter domain.
+
+Overall, the results suggest that combining a classical financial approximation with data-driven residual learning can produce a fast, accurate, and extensible Asian option pricing framework.
 
 ---
 
 ## 8. Key Takeaway
 
-The Turnbull-Wakeman approximation is fast but biased.
+The Turnbull-Wakeman approximation is fast but systematically biased.
 
 Control variate Monte Carlo is accurate but computationally expensive.
 
-This project shows that the bias of the Turnbull-Wakeman approximation is learnable. By modeling the residual relative to a control variate benchmark, the corrected approximation achieves much better accuracy while preserving the speed of an analytical approximation.
+This project combines the strengths of both:
 
-The method is especially effective for interpolation within a calibrated parameter grid, while extrapolation to extreme moneyness remains the main challenge.
+$$
+\text{Analytical approximation} + \text{Monte Carlo benchmark} + \text{Residual fitting}.
+$$
 
----
+Instead of learning the full option price directly, the model learns only the remaining error of the Turnbull-Wakeman approximation:
+
+$$
+\varepsilon_{\mathrm{TW}} = C_{\mathrm{TW}} - V_{\mathrm{benchmark}}.
+$$
+
+The corrected price is then computed as:
+
+$$
+C_{\mathrm{corrected}} = C_{\mathrm{TW}} - S_0\widehat{y}.
+$$
+
+This residual-learning approach substantially improves pricing accuracy while preserving much of the speed advantage of analytical approximations.
+
+The main findings are:
+
+- Under GBM, the corrected Turnbull-Wakeman approximation reduces pricing errors by more than 80% in most robustness tests.
+- The scaled residual design improves robustness across different spot levels.
+- The method performs best inside the calibrated parameter grid and is weaker under boundary extrapolation.
+- The stochastic-volatility extension shows that the same idea can improve effective-volatility TW baselines under Heston and SABR.
+- Greek diagnostics show that the correction also improves Delta, Vega, and $\Theta_T$ accuracy.
+- Cubic interpolation can achieve very strong grid-interior accuracy, while polynomial Ridge provides more conservative worst-case behavior.
+
+The central message is that Turnbull-Wakeman bias is structured and learnable. By correcting this residual rather than replacing the pricing model entirely, the framework remains interpretable, fast, and extensible.
 
 ## Interactive Demo
 
