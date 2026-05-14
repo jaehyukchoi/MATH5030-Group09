@@ -1137,11 +1137,7 @@ The three pricing methods compared are:
 2. Original Turnbull-Wakeman Greeks
 3. Bias-corrected Turnbull-Wakeman Greeks
 
-The corrected price is:
 
-$$
-C_{\mathrm{corrected}} = C_{\mathrm{TW}} - S_0\widehat{y}.
-$$
 ---
 
 ### Greek Robustness Results
@@ -1232,7 +1228,7 @@ python model_comparison/robustness_check_for_greeks.py
 - To improve Rho correction in future work, the residual dataset should include multiple interest-rate levels and the model should include \(r\) as a feature.
 
 
-## . Conclusion
+## 7. Conclusion
 
 The proposed Turnbull-Wakeman bias-correction framework is robust across most tested regimes. The correction reduces pricing MAE by approximately 81% to 91% in the main robustness tests, including random train-test split, high-volatility holdout, long-maturity holdout, high-monitoring-frequency holdout, leave-one-$S_0$-out, and checkerboard interpolation.
 
@@ -1243,7 +1239,7 @@ The main limitation is boundary moneyness extrapolation. When the extreme moneyn
 Overall, the results suggest that the residual-learning correction captures a stable and systematic structure in the Turnbull-Wakeman approximation error.
 
 ---
----
+
 ## 8. Key Takeaway
 
 The Turnbull-Wakeman approximation is fast but biased.
