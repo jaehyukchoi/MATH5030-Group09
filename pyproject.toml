@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "asianoption"
-version = "0.1.0"
-description = "Asian option pricing methods including Monte Carlo, control variate, and analytical approximations."
+version = "0.2.0"
+description = "Asian option pricing methods including Monte Carlo, control variates, analytical approximations, and stochastic volatility extensions."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Ryan Hou" }
 ]
@@ -18,6 +18,10 @@ keywords = [
     "monte carlo",
     "control variate",
     "turnbull wakeman",
+    "levy approximation",
+    "heston model",
+    "sabr model",
+    "stochastic volatility",
     "quantitative finance"
 ]
 classifiers = [
@@ -26,7 +30,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Office/Business :: Financial",
@@ -43,6 +46,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/RyanHou0303/AsianOption"
 Repository = "https://github.com/RyanHou0303/AsianOption"
+Issues = "https://github.com/RyanHou0303/AsianOption/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,8 +1,8 @@
 # Bias-Corrected Turnbull-Wakeman Approximation for Arithmetic Asian Options
 
-This project studies the pricing of arithmetic Asian options under the Black-Scholes geometric Brownian motion framework. Since arithmetic Asian options do not admit a simple closed-form solution, the project compares Monte Carlo methods, analytical approximations, and a data-driven residual correction approach.
+This project studies the pricing of arithmetic Asian options under the Black-Scholes geometric Brownian motion framework. Since arithmetic Asian options do not admit a simple closed-form solution, the project compares Monte Carlo methods, analytical approximations, stochastic-volatility extensions, and data-driven residual correction approaches.
 
-The main goal is to build a pricing framework that keeps the speed of analytical approximations while improving their accuracy relative to a high-precision Monte Carlo benchmark.
+The main goal is to build a pricing framework that keeps the speed of analytical approximations while improving their accuracy relative to high-precision Monte Carlo benchmarks.
 
 ---
 
@@ -24,10 +24,14 @@ import asianoption
 
 ## Quick Start
 
+### Constant-Volatility GBM Asian Option Pricing
+
 ```python
-from asianoption.approximation import turnbull_wakeman_arithmetic_asian_price
-from asianoption.control_variate import arithmetic_asian_cv
-from asianoption.arithmetic_asian_MC import arithmetic_asian_price_mc
+from asianoption import (
+    turnbull_wakeman_arithmetic_asian_price,
+    arithmetic_asian_price_mc,
+    arithmetic_asian_cv,
+)
 
 S0 = 100
 K = 100
@@ -80,6 +84,85 @@ print("Variance reduction:", cv_result.variance_reduction)
 
 ---
 
+### Stochastic Volatility Examples
+
+The package also includes arithmetic Asian option pricing under Heston and SABR stochastic volatility models.
+
+```python
+from asianoption import (
+    arithmetic_asian_heston_mc,
+    arithmetic_asian_sabr_mc,
+    turnbull_wakeman_heston_effective_vol_price,
+    turnbull_wakeman_sabr_effective_vol_price,
+)
+
+heston_mc = arithmetic_asian_heston_mc(
+    S0=100,
+    K=100,
+    r=0.05,
+    T=1.0,
+    v0=0.04,
+    kappa=2.0,
+    theta=0.04,
+    xi=0.3,
+    rho=-0.7,
+    n=12,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+)
+
+heston_tw = turnbull_wakeman_heston_effective_vol_price(
+    S0=100,
+    K=100,
+    r=0.05,
+    T=1.0,
+    v0=0.04,
+    kappa=2.0,
+    theta=0.04,
+    xi=0.3,
+    rho=-0.7,
+    n=12,
+    option_type="call",
+)
+
+sabr_mc = arithmetic_asian_sabr_mc(
+    F0=100,
+    K=100,
+    r=0.05,
+    T=1.0,
+    alpha0=0.2,
+    beta=1.0,
+    nu=0.3,
+    rho=-0.4,
+    n=12,
+    n_paths=100_000,
+    seed=42,
+    option_type="call",
+)
+
+sabr_tw = turnbull_wakeman_sabr_effective_vol_price(
+    S0=100,
+    K=100,
+    r=0.05,
+    T=1.0,
+    alpha0=0.2,
+    beta=1.0,
+    nu=0.3,
+    rho=-0.4,
+    n=12,
+    option_type="call",
+)
+
+print("Heston Asian MC price:", heston_mc.price)
+print("Heston effective-vol TW price:", heston_tw)
+
+print("SABR Asian MC price:", sabr_mc.price)
+print("SABR effective-vol TW price:", sabr_tw)
+```
+
+---
+
 ## Available Methods
 
 | Method | Description |
@@ -87,8 +170,13 @@ print("Variance reduction:", cv_result.variance_reduction)
 | Plain Monte Carlo | Simulates GBM paths and prices arithmetic Asian options by discounted payoff averaging. |
 | Control Variate Monte Carlo | Uses the geometric Asian option as a control variate to reduce Monte Carlo variance. |
 | Geometric Asian Closed Form | Analytical benchmark for geometric Asian options under GBM. |
-| Turnbull-Wakeman Approximation | Fast analytical approximation for arithmetic Asian options. |
+| Geometric Asian Monte Carlo | Monte Carlo pricing for geometric Asian options. |
+| Turnbull-Wakeman Approximation | Fast moment-matching analytical approximation for arithmetic Asian options under GBM. |
 | Levy Approximation | Continuous-time approximation for arithmetic Asian options. |
+| Heston Asian Monte Carlo | Prices arithmetic Asian options under Heston stochastic volatility. |
+| SABR Asian Monte Carlo | Prices arithmetic Asian options under spot-style SABR stochastic volatility. |
+| Heston Effective-Vol TW Baseline | Uses expected average Heston variance as an effective volatility inside the Turnbull-Wakeman approximation. |
+| SABR Effective-Vol TW Baseline | Uses initial SABR local log-volatility as an effective volatility inside the Turnbull-Wakeman approximation. |
 
 ---
 
@@ -100,16 +188,25 @@ To run the research scripts and notebooks from the GitHub repository:
 git clone https://github.com/RyanHou0303/AsianOption.git
 cd AsianOption
 pip install -e .
-pip install -r requirements.txt
 ```
+
+This installs the package in editable mode together with the required dependencies specified in `pyproject.toml`.
 
 Example scripts:
 
 ```bash
-python scripts/robustness_check.py
-python scripts/alternative_method_interpolation.py
+python experiments/greeks_robustness_check.py
+python experiments/stochastic_bias_correction.py
+python scripts/build_stochastic_residual_dataset.py
 ```
 
+To run demo notebooks, install Jupyter if needed:
+
+```bash
+pip install jupyter
+```
+
+---
 ## 1. Motivation
 
 Asian options depend on the average price of the underlying asset over time. For a discretely monitored arithmetic Asian call option, the arithmetic average is
@@ -139,35 +236,120 @@ This project investigates whether the bias of a fast approximation can be learne
 ```text
 AsianOption/
 │
-├── arithmetic_asian_MC.py
-│   └── Plain Monte Carlo pricing for arithmetic Asian options
+├── asianoption/
+│   ├── __init__.py
+│   │   └── Package exports for the main pricing functions
+│   │
+│   ├── arithmetic_asian_MC.py
+│   │   └── Plain Monte Carlo pricing for arithmetic Asian options under GBM
+│   │
+│   ├── geometric_asian.py
+│   │   └── Geometric Asian option Monte Carlo and closed-form pricing
+│   │
+│   ├── control_variate.py
+│   │   └── Arithmetic Asian Monte Carlo with geometric Asian control variate
+│   │
+│   ├── approximation.py
+│   │   └── Turnbull-Wakeman and Levy analytical approximations
+│   │
+│   ├── stochastic_volatility.py
+│   │   └── Heston and SABR Monte Carlo pricing for arithmetic Asian options
+│   │
+│   ├── stochastic_tw.py
+│   │   └── Effective-volatility Turnbull-Wakeman baselines for Heston and SABR
+│   │
+│   └── utils.py
+│       └── Shared helper functions
 │
-├── geometric_asian.py
-│   └── Closed-form pricing for geometric Asian options
+├── scripts/
+│   ├── build_residual_dataset.py
+│   │   └── Generate the GBM Turnbull-Wakeman residual dataset
+│   │
+│   └── build_stochastic_residual_dataset.py
+│       └── Generate Heston and SABR residual datasets
 │
-├── control_variate.py
-│   └── Arithmetic Asian Monte Carlo with geometric Asian control variate
+├── experiments/
+│   ├── compare_methods.py
+│   │   └── Compare MC, control variate MC, TW, and Levy methods
+│   │
+│   ├── K_sigma_study.py
+│   │   └── Study pricing deviations across strike and volatility
+│   │
+│   └── greeks_comparison.py
+│       └── Compare finite-difference Greeks against CV Monte Carlo benchmarks
 │
-├── approximation.py
-│   └── Turnbull-Wakeman and Levy analytical approximations
+├── model comparison/
+│   ├── TW_bias_correction.py
+│   │   └── Train and evaluate the GBM TW residual correction model
+│   │
+│   ├── robustness_check_for_TW_bias_correction.py
+│   │   └── Robustness tests for the GBM residual correction model
+│   │
+│   ├── robustness_check_for_greeks.py
+│   │   └── Greek robustness tests across moneyness, volatility, maturity, and monitoring frequency
+│   │
+│   ├── stochastic_bias_correction.py
+│   │   └── Train Heston and SABR residual correction models
+│   │
+│   └── alternative_method_interpolation.py
+│       └── Additional interpolation and model-comparison experiments
 │
-├── compare_methods.py
-│   └── Comparison across Monte Carlo, control variate, and approximations
+├── data/
+│   ├── tw_residual_dataset_s0_grid.csv
+│   │   └── GBM residual dataset with multiple spot levels
+│   │
+│   ├── heston_tw_residual_dataset.csv
+│   │   └── Heston effective-vol TW residual dataset
+│   │
+│   ├── sabr_tw_residual_dataset.csv
+│   │   └── SABR effective-vol TW residual dataset
+│   │
+│   ├── bias_correction_summary.csv
+│   │   └── Summary of GBM bias-correction performance
+│   │
+│   └── bias_correction_robustness_summary.csv
+│       └── Summary of robustness tests for the GBM correction model
 │
-├── build_tw_residual_dataset.py
-│   └── Generate residual dataset between TW approximation and CV benchmark
+├── reports/
+│   ├── greeks_comparison_results.csv
+│   │   └── Single-case Greek comparison results
+│   │
+│   ├── greeks_robustness_summary.csv
+│   │   └── Summary of Greek robustness results
+│   │
+│   ├── stochastic_bias_correction_summary.csv
+│   │   └── Summary of Heston and SABR residual correction results
+│   │
+│   ├── heston_stochastic_correction_test_results.csv
+│   │   └── Prediction-level Heston correction test results
+│   │
+│   └── sabr_stochastic_correction_test_results.csv
+│       └── Prediction-level SABR correction test results
 │
-├── robustness_check.py
-│   └── Robustness tests for the residual correction model
+├── figures/
+│   ├── runtime_vs_monitoring_frequency_K100_sigma_0p2.png
+│   │   └── Runtime comparison across monitoring frequencies
+│   │
+│   ├── error_vs_strike_sigma_0p2_n12.png
+│   │   └── Pricing deviation versus strike
+│   │
+│   ├── error_vs_vol_K100_n12.png
+│   │   └── Pricing deviation versus volatility
+│   │
+│   └── robustness_mae_reduction_summary.png
+│       └── Robustness summary visualization
 │
-├── tw_residual_dataset_s0_grid.csv
-│   └── Dataset of option parameters, benchmark prices, TW prices, and residuals
+├── demo_bias_corrected_tw_with_plots_colab_ready.ipynb
+│   └── Jupyter notebook demo with pricing comparisons and plots
 │
-├── tw_bias_correction_random_test_results.csv
-│   └── Prediction-level results for the random test set
+├── pyproject.toml
+│   └── Package metadata, dependencies, and build configuration
 │
-└── bias_correction_summary.csv
-    └── Summary of robustness test performance
+├── README.md
+│   └── Project documentation
+│
+└── .gitignore
+    └── Files and folders excluded from version control
 ```
 
 ---
@@ -599,7 +781,7 @@ This is the main limitation of the current framework. The correction surface is 
 
 ---
 
-## Cubic interpolation method
+## 5.Cubic interpolation method
 
 The cubic interpolation result on the original residual grid is an in-sample reconstruction test, because the interpolator is evaluated on the same grid used to build it. To obtain a more objective evaluation, we construct a separate off-grid test set.
 
@@ -664,8 +846,425 @@ This suggests a useful trade-off:
 | Cubic interpolation correction | Better average accuracy inside the calibrated grid | Larger worst-case error due to possible interpolation overshoot |
 
 Overall, the off-grid test suggests that the residual surface is smooth and can be accurately interpolated inside the calibrated parameter domain. Polynomial Ridge is more conservative and robust in worst-case error control, while cubic interpolation is more accurate for grid-interior pricing.
+## How to Run This Section
 
-## Conclusion
+This section explains how to reproduce the bias-correction, robustness, and interpolation results shown above.
+
+All commands should be run from the project root directory:
+
+```bash
+cd AsianOption
+```
+
+Before running the research scripts, install the package locally:
+
+```bash
+pip install -e .
+```
+
+This installs the `asianoption` package together with the dependencies listed in `pyproject.toml`.
+
+---
+
+### 1. Generate the GBM Turnbull-Wakeman Residual Dataset
+
+To generate the main constant-volatility residual dataset, run:
+
+```bash
+python scripts/build_residual_dataset.py
+```
+
+This script generates:
+
+```text
+data/tw_residual_dataset_s0_grid.csv
+```
+
+The dataset contains option parameters, control variate Monte Carlo benchmark prices, Turnbull-Wakeman prices, raw residuals, scaled residuals, and engineered features.
+
+The residual is defined as:
+
+$$
+\varepsilon_{\mathrm{TW}}
+=
+C_{\mathrm{TW}} - V_{\mathrm{CV}}.
+$$
+
+The scaled residual target is:
+
+$$
+y
+=
+\frac{C_{\mathrm{TW}} - V_{\mathrm{CV}}}{S_0}.
+$$
+
+---
+
+### 2. Train the Polynomial Ridge Bias-Correction Model
+
+To train the polynomial Ridge residual correction model, run:
+
+```bash
+python "model comparison/TW_bias_correction.py"
+```
+
+This script trains the model on the scaled residual and evaluates the corrected Turnbull-Wakeman price:
+
+$$
+C_{\mathrm{corrected}}
+=
+C_{\mathrm{TW}} - S_0\widehat{y}.
+$$
+
+Typical outputs include:
+
+```text
+data/tw_bias_correction_random_test_results.csv
+data/bias_correction_summary.csv
+```
+
+If you rename the folder `model comparison` to `model_comparison`, use:
+
+```bash
+python model_comparison/TW_bias_correction.py
+```
+
+---
+
+### 3. Run Robustness Checks
+
+To reproduce the robustness tests, run:
+
+```bash
+python "model comparison/robustness_check_for_TW_bias_correction.py"
+```
+
+This script runs tests such as:
+
+- Random train/test split
+- High-volatility holdout
+- Long-maturity holdout
+- High-monitoring-frequency holdout
+- Leave-one-$S_0$-out
+- Leave-one-moneyness-out
+- Checkerboard interpolation holdout
+
+Typical outputs include:
+
+```text
+data/bias_correction_robustness_summary.csv
+reports/*_prediction_results.csv
+```
+
+If the folder is renamed to `model_comparison`, use:
+
+```bash
+python model_comparison/robustness_check_for_TW_bias_correction.py
+```
+
+---
+
+### 4. Generate Robustness Figures
+
+Some robustness figures are generated from the robustness and comparison scripts. To regenerate the main diagnostic plots, run:
+
+```bash
+python experiments/compare_methods.py
+python experiments/K_sigma_study.py
+```
+
+Typical figure outputs include:
+
+```text
+figures/runtime_vs_monitoring_frequency_K100_sigma_0p2.png
+figures/error_vs_strike_sigma_0p2_n12.png
+figures/error_vs_vol_K100_n12.png
+figures/random_original_vs_corrected_tw_error.png
+figures/random_tw_vs_corrected_mae.png
+figures/robustness_mae_reduction_summary.png
+```
+
+---
+
+### 5. Run the Cubic Interpolation Experiment
+
+To reproduce the cubic interpolation comparison, run:
+
+```bash
+python "model comparison/alternative_method_interpolation.py"
+```
+
+This script compares:
+
+1. Original Turnbull-Wakeman approximation
+2. Polynomial Ridge residual correction
+3. Cubic interpolation residual correction
+
+It evaluates the methods on an off-grid test set inside the calibrated parameter domain.
+
+If the folder is renamed to `model_comparison`, use:
+
+```bash
+python model_comparison/alternative_method_interpolation.py
+```
+
+---
+
+### Notes
+
+Some scripts use Monte Carlo benchmarks and may take several minutes depending on `n_paths`.
+
+Generated files are organized as follows:
+
+```text
+data/       Generated datasets and summary CSV files
+reports/    Prediction-level results and experiment summaries
+figures/    Diagnostic plots
+```
+
+If a script cannot find a file, make sure the required dataset has already been generated and that the command is run from the project root directory.
+
+
+## 6. Stochastic Volatility Extension
+
+This project also extends the Asian option pricing framework to stochastic volatility models.
+
+Implemented models:
+
+- Heston Asian Monte Carlo
+- SABR Asian Monte Carlo
+- Effective-volatility Turnbull-Wakeman baselines for Heston and SABR
+- Separate residual correction models for Heston and SABR
+
+The idea is to first approximate the stochastic-volatility model with an effective-volatility Turnbull-Wakeman baseline, then learn the remaining residual relative to a Monte Carlo benchmark.
+
+For Heston:
+
+$$
+\varepsilon_{\mathrm{Heston}}
+=
+C_{\mathrm{TW,Heston}} - V_{\mathrm{HestonMC}}.
+$$
+
+For SABR:
+
+$$
+\varepsilon_{\mathrm{SABR}}
+=
+C_{\mathrm{TW,SABR}} - V_{\mathrm{SABRMC}}.
+$$
+
+The corrected price is computed as:
+
+$$
+C_{\mathrm{corrected}}
+=
+C_{\mathrm{TW}} - S_0\widehat{y}.
+$$
+
+### Stochastic Volatility Results
+
+| Model | Original MAE | Corrected MAE | MAE Reduction | Original RMSE | Corrected RMSE | RMSE Reduction | Residual R² | Improved Fraction |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Heston | 0.287763 | 0.144631 | 49.74% | 0.439719 | 0.195040 | 55.64% | 0.803250 | 65.44% |
+| SABR | 0.369746 | 0.221938 | 39.98% | 0.882875 | 0.332595 | 62.33% | 0.832353 | 41.12% |
+
+The results show that the residual correction remains effective under stochastic volatility.  
+For Heston, the correction reduces MAE by about 50%.  
+For SABR, the correction reduces RMSE by more than 60% and strongly reduces large errors.
+
+### How to Run
+
+Generate the Heston and SABR residual datasets:
+
+```bash
+python scripts/build_stochastic_residual_dataset.py
+```
+
+This creates:
+
+```text
+data/heston_tw_residual_dataset.csv
+data/sabr_tw_residual_dataset.csv
+```
+
+Then train and evaluate the stochastic-volatility correction models:
+
+```bash
+python "model comparison/stochastic_bias_correction.py"
+```
+
+This creates:
+
+```text
+reports/heston_stochastic_correction_test_results.csv
+reports/sabr_stochastic_correction_test_results.csv
+reports/stochastic_bias_correction_summary.csv
+```
+
+If the folder is renamed to `model_comparison`, run:
+
+```bash
+python model_comparison/stochastic_bias_correction.py
+```
+## 7.Greek Robustness Check
+
+This project also evaluates whether the bias-corrected Turnbull-Wakeman approximation improves finite-difference Greeks under the constant-volatility GBM setting.
+
+The benchmark Greeks are computed using control variate Monte Carlo with common random numbers. Using common random numbers helps reduce Monte Carlo noise when computing bumped prices for finite differences.
+
+The Greeks compared are:
+
+- Delta
+- Vega
+- Rho
+- Theta_T
+
+Here, `Theta_T` is the derivative with respect to time-to-maturity \(T\), not calendar-time theta.
+
+---
+
+### Greek Calculation Method
+
+For each parameter setting, Greeks are computed by finite difference.
+
+For example, Delta is approximated by:
+
+$$
+\Delta
+\approx
+\frac{V(S_0+h)-V(S_0-h)}{2h}.
+$$
+
+Vega is approximated by:
+
+$$
+\mathrm{Vega}
+\approx
+\frac{V(\sigma+h)-V(\sigma-h)}{2h}.
+$$
+
+Rho is approximated by:
+
+$$
+\rho
+\approx
+\frac{V(r+h)-V(r-h)}{2h}.
+$$
+
+Theta_T is approximated by:
+
+$$
+\Theta_T
+\approx
+\frac{V(T+h)-V(T-h)}{2h}.
+$$
+
+The three pricing methods compared are:
+
+1. Control variate Monte Carlo Greeks
+2. Original Turnbull-Wakeman Greeks
+3. Bias-corrected Turnbull-Wakeman Greeks
+
+The corrected price is:
+
+$$
+C_{\mathrm{corrected}}
+=
+C_{\mathrm{TW}} - S_0\widehat{y}.
+$$
+
+---
+
+### Greek Robustness Results
+
+The robustness check is run across 90 parameter combinations over moneyness, volatility, maturity, and monitoring frequency:
+
+```text
+moneyness = [0.8, 0.9, 1.0, 1.1, 1.2]
+sigma     = [0.1, 0.2, 0.4]
+T         = [0.5, 1.0, 2.0]
+n         = [12, 52]
+```
+
+Across the full grid, the corrected Turnbull-Wakeman approximation improves Delta, Vega, and Theta_T substantially.
+
+| Greek | Original MAE | Corrected MAE | MAE Reduction | RMSE Reduction | Improved Fraction |
+|---|---:|---:|---:|---:|---:|
+| Delta | 0.002738 | 0.001198 | 56.25% | 64.87% | 60.00% |
+| Vega | 0.387539 | 0.096612 | 75.07% | 79.45% | 68.89% |
+| Theta_T | 0.053060 | 0.017495 | 67.03% | 73.31% | 66.67% |
+| Rho | 0.185497 | 0.185497 | 0.00% | 0.00% | 4.44% |
+
+The strongest improvement is observed for Vega, where the MAE is reduced by about 75%. Delta and Theta_T also improve meaningfully across the grid.
+
+Rho remains unchanged because the current residual correction model does not include the interest rate \(r\) as a feature. Therefore, the correction term is independent of \(r\), and the corrected Rho is the same as the original Turnbull-Wakeman Rho.
+
+---
+
+### Interpretation
+
+The Greek robustness check shows that the residual correction improves not only price accuracy, but also local sensitivities for several important Greeks.
+
+Key findings:
+
+- Delta MAE is reduced by about 56%.
+- Vega MAE is reduced by about 75%.
+- Theta_T MAE is reduced by about 67%.
+- Rho is unchanged because the correction model does not depend on \(r\).
+
+The improvement is strongest in moderate-to-high volatility regimes and longer-maturity regimes. At very low volatility, the original Turnbull-Wakeman Greeks are already close to the Monte Carlo benchmark, so the correction can slightly over-adjust in some cases.
+
+---
+
+### How to Run
+
+To run the single-case Greek comparison:
+
+```bash
+python experiments/greeks_comparison.py
+```
+
+This generates:
+
+```text
+reports/greeks_comparison_results.csv
+```
+
+To run the full Greek robustness check across the parameter grid:
+
+```bash
+python "model comparison/robustness_check_for_greeks.py"
+```
+
+This generates:
+
+```text
+reports/greeks_robustness_results.csv
+reports/greeks_robustness_summary.csv
+reports/greeks_robustness_by_moneyness.csv
+reports/greeks_robustness_by_sigma.csv
+reports/greeks_robustness_by_T.csv
+reports/greeks_robustness_by_n.csv
+```
+
+If the folder is renamed to `model_comparison`, run:
+
+```bash
+python model_comparison/robustness_check_for_greeks.py
+```
+
+---
+
+### Notes
+
+- Monte Carlo Greeks use common random numbers to reduce finite-difference noise.
+- `Theta_T` is reported as the derivative with respect to time-to-maturity \(T\).
+- Gamma is not included in the main robustness table because second-order finite-difference Monte Carlo Greeks are much more noise-sensitive.
+- To improve Rho correction in future work, the residual dataset should include multiple interest-rate levels and the model should include \(r\) as a feature.
+
+
+## . Conclusion
 
 The proposed Turnbull-Wakeman bias-correction framework is robust across most tested regimes. The correction reduces pricing MAE by approximately 81% to 91% in the main robustness tests, including random train-test split, high-volatility holdout, long-maturity holdout, high-monitoring-frequency holdout, leave-one-$S_0$-out, and checkerboard interpolation.
 
@@ -674,33 +1273,10 @@ The strongest evidence comes from the leave-one-$S_0$-out tests, where the MAE r
 The main limitation is boundary moneyness extrapolation. When the extreme moneyness levels $0.7$ and $1.3$ are entirely excluded from training, performance drops significantly. In contrast, interior moneyness levels from $0.8$ to $1.2$ show strong interpolation performance.
 
 Overall, the results suggest that the residual-learning correction captures a stable and systematic structure in the Turnbull-Wakeman approximation error.
-## 5. Future Work
-
-Planned extensions include:
-
-1. Expand the training grid to include more extreme moneyness levels:
-
-$$
-m \in \{0.6,0.7,\ldots,1.4\}.
-$$
-
-2. Add more spot levels for additional scale robustness tests:
-
-$$
-S_0 \in \{70,80,90,100,110,120,130\}.
-$$
-
-3. Compare full residual correction with conservative shrinkage correction.
-
-
-4. Extend the framework to Greeks such as Delta, Gamma, Vega, Rho, and Theta.
-
-
-5. Test the method under different market assumptions, such as stochastic volatility or local volatility.
 
 ---
-
-## 6. Key Takeaway
+---
+## 8. Key Takeaway
 
 The Turnbull-Wakeman approximation is fast but biased.
 
